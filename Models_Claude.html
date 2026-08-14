@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研發課全機種資料庫查詢系統</title>
+<style>
+:root{
+  --bg1:#FBF4FC;
+  --bg2:#F3E7FB;
+  --surface:#FFFFFF;
+  --surface-soft:#FAF3FC;
+  --primary:#9B6FC0;
+  --primary-dark:#7C4FA3;
+  --primary-light:#EADCF6;
+  --pink:#F1A6C9;
+  --pink-light:#FBE7F1;
+  --text:#4A3B5C;
+  --text-soft:#8577A0;
+  --border:#E9D9F3;
+  --shadow: 0 4px 18px rgba(155,111,192,0.14);
+  --radius:16px;
+
+  --c-yiliangchan-bg:#E4F8ED; --c-yiliangchan-fg:#1E7A46; --c-yiliangchan-dot:#4FBE85;
+  --c-kaifa-bg:#EDE7FA; --c-kaifa-fg:#5B3E99; --c-kaifa-dot:#8E7CC3;
+  --c-tingzhi-bg:#FCE4E9; --c-tingzhi-fg:#A31432; --c-tingzhi-dot:#E8748A;
+  --c-zanting-bg:#FFF3DC; --c-zanting-fg:#8A5A00; --c-zanting-dot:#F2B84B;
+  --c-pinggu-bg:#FDEAF1; --c-pinggu-fg:#B23464; --c-pinggu-dot:#F4A9C4;
+  --c-yikaifa-bg:#E1F7F5; --c-yikaifa-fg:#12726A; --c-yikaifa-dot:#4FBDB4;
+  --c-none-bg:#F1EEF5; --c-none-fg:#6B6178; --c-none-dot:#B0A8BC;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",-apple-system,BlinkMacSystemFont,sans-serif;
+  color:var(--text);
+  background:linear-gradient(160deg,var(--bg1) 0%, var(--bg2) 55%, #F6E9F9 100%);
+  min-height:100vh;
+  padding-bottom:60px;
+}
+.wrap{max-width:1400px;margin:0 auto;padding:28px 24px 40px;}
+
+/* header */
+.page-header{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  margin-bottom:24px;
+}
+.brand{display:flex;align-items:center;gap:14px;}
+.brand-mark{
+  width:52px;height:52px;border-radius:14px;
+  background:linear-gradient(135deg,var(--primary),var(--pink));
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:700;font-size:20px;letter-spacing:1px;
+  box-shadow:var(--shadow);
+  flex-shrink:0;
+}
+.brand h1{font-size:22px;margin:0;color:var(--primary-dark);letter-spacing:0.5px;}
+.brand p{margin:2px 0 0;font-size:13px;color:var(--text-soft);}
+.header-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.save-indicator{
+  font-size:12px;color:var(--text-soft);background:var(--surface);
+  border:1px solid var(--border);border-radius:20px;padding:6px 14px;
+  display:inline-flex;align-items:center;gap:6px;transition:background .2s ease,color .2s ease;
+}
+.save-indicator::before{
+  content:"";width:7px;height:7px;border-radius:50%;background:var(--c-yiliangchan-dot);
+  flex-shrink:0;
+}
+.save-indicator.flash{background:var(--primary-light);color:var(--primary-dark);}
+
+/* buttons */
+.btn{
+  border:none;border-radius:10px;padding:10px 18px;font-size:14px;font-weight:600;
+  cursor:pointer;transition:transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:inherit;
+}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:linear-gradient(135deg,var(--primary),#B183D1);color:#fff;box-shadow:0 4px 14px rgba(155,111,192,0.35);}
+.btn-primary:hover{opacity:0.92;}
+.btn-ghost{background:var(--surface);color:var(--primary-dark);border:1px solid var(--border);}
+.btn-ghost:hover{background:var(--primary-light);}
+.btn-danger{background:#fff;color:#C1476B;border:1px solid #F3C9D6;}
+.btn-danger:hover{background:#FCE9EF;}
+.btn-sm{padding:6px 12px;font-size:12.5px;border-radius:8px;}
+.btn:disabled{opacity:0.45;cursor:not-allowed;}
+
+/* stats - compact pill bar */
+.stats-row{
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+  margin-bottom:16px;
+  background:var(--surface);border-radius:12px;padding:8px 10px;
+  box-shadow:var(--shadow);border:1px solid var(--border);
+}
+.stat-card{
+  background:var(--surface-soft);border-radius:20px;padding:5px 12px 5px 10px;
+  border:1px solid var(--border);
+  display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;
+  white-space:nowrap;
+}
+.stat-card .stat-label{font-size:11.5px;color:var(--text-soft);display:flex;align-items:center;gap:5px;}
+.stat-dot{width:7px;height:7px;border-radius:50%;background:var(--dot-color,var(--primary));flex-shrink:0;}
+.stat-card .stat-value{font-size:13.5px;font-weight:700;color:var(--text);}
+.stat-card.total{background:linear-gradient(135deg,var(--primary),#B183D1);color:#fff;border-color:transparent;padding:5px 14px;}
+.stat-card.total .stat-label{color:rgba(255,255,255,0.85);}
+.stat-card.total .stat-value{color:#fff;}
+
+/* toolbar */
+.toolbar{
+  background:var(--surface);border-radius:var(--radius);padding:18px 20px;
+  box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:20px;
+}
+.toolbar-row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;}
+.field-group{display:flex;flex-direction:column;gap:6px;flex:1;min-width:220px;}
+.field-group label{font-size:12.5px;color:var(--text-soft);font-weight:600;}
+.input, select.input{
+  padding:10px 12px;border-radius:10px;border:1px solid var(--border);
+  font-size:14px;color:var(--text);background:var(--surface-soft);
+  font-family:inherit;width:100%;
+}
+.input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light);}
+.search-wrap{position:relative;flex:2;min-width:260px;}
+.search-wrap input{padding-left:38px;padding-right:34px;}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-soft);font-size:15px;}
+.search-clear-btn{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  background:var(--surface-soft);border:none;border-radius:50%;
+  width:22px;height:22px;color:var(--text-soft);cursor:pointer;
+  font-size:12px;line-height:1;display:none;align-items:center;justify-content:center;
+}
+.search-clear-btn:hover{background:var(--primary-light);color:var(--primary-dark);}
+.search-clear-btn.show{display:flex;}
+
+.chip-picker{position:relative;}
+.chip-picker-btn{
+  padding:10px 14px;border-radius:10px;border:1px solid var(--border);
+  background:var(--surface-soft);font-size:13.5px;color:var(--text);cursor:pointer;
+  display:flex;align-items:center;gap:8px;white-space:nowrap;font-family:inherit;
+}
+.chip-picker-btn:hover{border-color:var(--primary);}
+.chip-badge{
+  background:var(--primary);color:#fff;border-radius:20px;padding:1px 8px;font-size:11.5px;font-weight:700;
+}
+.chip-panel{
+  position:absolute;top:calc(100% + 8px);left:0;z-index:40;
+  background:#fff;border:1px solid var(--border);border-radius:12px;
+  box-shadow:0 10px 30px rgba(120,80,160,0.22);
+  padding:14px;width:340px;max-height:340px;overflow:auto;display:none;
+}
+.chip-panel.open{display:block;}
+.chip-panel-actions{display:flex;gap:8px;margin-bottom:10px;}
+.chip-panel-actions button{
+  flex:1;background:var(--primary-light);border:none;border-radius:8px;padding:6px 8px;
+  font-size:12px;color:var(--primary-dark);cursor:pointer;font-weight:600;font-family:inherit;
+}
+.chip-panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;}
+.chip-check{display:flex;align-items:center;gap:6px;font-size:12.8px;color:var(--text);}
+.chip-check input{accent-color:var(--primary);}
+
+/* table */
+.table-card{
+  background:var(--surface);border-radius:var(--radius);
+  box-shadow:var(--shadow);border:1px solid var(--border);
+  overflow:hidden;
+}
+.table-scroll{overflow:auto;max-height:640px;}
+table{border-collapse:collapse;width:auto;font-size:13px;table-layout:auto;}
+thead th{
+  position:sticky;top:0;background:linear-gradient(180deg,#F7ECFB,#F0E1F8);
+  color:var(--primary-dark);text-align:left;padding:8px 10px;font-weight:700;
+  border-bottom:2px solid var(--border);white-space:nowrap;z-index:5;
+  letter-spacing:0;overflow:visible;
+}
+tbody td{padding:6px 8px;border-bottom:1px solid #F2E9F7;color:var(--text);white-space:nowrap;line-height:1.3;letter-spacing:0;overflow:visible;}
+tbody tr{transition:background .1s ease;}
+tbody tr:hover{background:var(--surface-soft);}
+tbody tr:nth-child(even){background:#FDFAFE;}
+tbody tr:nth-child(even):hover{background:var(--surface-soft);}
+.col-actions{display:flex;gap:5px;}
+.empty-row td{text-align:center;color:var(--text-soft);padding:40px 0;font-size:14px;}
+.del-cell{text-align:center;}
+.del-btn{
+  background:none;border:none;cursor:pointer;font-size:15px;line-height:1;
+  color:#D98BA6;padding:4px 6px;border-radius:6px;transition:background .12s ease;
+}
+.del-btn:hover{background:#FCE4E9;color:#A31432;}
+
+.cell-input{
+  border:none;background:transparent;font:inherit;color:var(--text);
+  padding:2px 4px;border-radius:6px;font-size:13px;box-sizing:content-box;
+  display:inline-block;vertical-align:middle;
+}
+.cell-input:hover{background:var(--surface-soft);}
+.cell-input:focus{outline:none;background:#fff;box-shadow:0 0 0 2px var(--primary-light);}
+select.cell-input{
+  appearance:none;-webkit-appearance:none;cursor:pointer;box-sizing:content-box;
+  padding:3px 20px 3px 8px;border-radius:20px;font-weight:700;font-size:11.5px;
+  background-image: linear-gradient(45deg,transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 12px) center, calc(100% - 8px) center;
+  background-size: 4px 4px, 4px 4px;
+  background-repeat:no-repeat;
+}
+select.cell-input:focus{box-shadow:0 0 0 2px rgba(0,0,0,0.08);}
+
+.badge{
+  display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;
+  font-size:11.5px;font-weight:700;white-space:nowrap;
+}
+.badge .dot{width:6px;height:6px;border-radius:50%;}
+
+.result-info{padding:12px 20px;font-size:12.5px;color:var(--text-soft);border-top:1px solid var(--border);}
+
+/* modal */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(75,45,95,0.35);backdrop-filter:blur(2px);
+  display:none;align-items:center;justify-content:center;z-index:100;padding:24px;
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  background:#fff;border-radius:20px;max-width:880px;width:100%;max-height:88vh;
+  overflow:auto;box-shadow:0 24px 60px rgba(90,50,120,0.35);
+}
+.modal-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 26px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:2;
+}
+.modal-header h2{margin:0;font-size:18px;color:var(--primary-dark);}
+.modal-close{background:none;border:none;font-size:20px;color:var(--text-soft);cursor:pointer;line-height:1;}
+.modal-body{padding:22px 26px;}
+.form-section{margin-bottom:22px;}
+.form-section h3{
+  font-size:13.5px;color:var(--primary-dark);margin:0 0 12px;padding-bottom:6px;
+  border-bottom:2px solid var(--primary-light);letter-spacing:0.5px;
+}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px 16px;}
+.form-field label{display:block;font-size:12px;color:var(--text-soft);margin-bottom:5px;font-weight:600;}
+.form-field input, .form-field select{
+  width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);
+  font-size:13.5px;font-family:inherit;background:var(--surface-soft);color:var(--text);
+}
+.form-field input:focus, .form-field select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light);}
+.modal-footer{
+  padding:16px 26px 22px;display:flex;justify-content:flex-end;gap:10px;
+  position:sticky;bottom:0;background:#fff;border-top:1px solid var(--border);
+}
+
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--primary-dark);color:#fff;padding:12px 22px;border-radius:12px;
+  font-size:13.5px;box-shadow:0 10px 30px rgba(90,50,120,0.35);
+  opacity:0;pointer-events:none;transition:all .25s ease;z-index:200;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.confirm-overlay{
+  position:fixed;inset:0;background:rgba(75,45,95,0.35);display:none;
+  align-items:center;justify-content:center;z-index:150;
+}
+.confirm-overlay.open{display:flex;}
+.confirm-box{background:#fff;border-radius:16px;padding:24px;max-width:360px;box-shadow:0 20px 50px rgba(90,50,120,0.3);}
+.confirm-box p{margin:0 0 18px;font-size:14px;color:var(--text);}
+.confirm-actions{display:flex;justify-content:flex-end;gap:10px;}
+
+.img-cell{display:flex;align-items:center;gap:6px;}
+.img-thumb{
+  width:30px;height:30px;border-radius:6px;object-fit:cover;cursor:pointer;
+  border:1px solid var(--border);flex-shrink:0;display:block;
+}
+.img-thumb:hover{box-shadow:0 0 0 2px var(--primary-light);}
+.img-placeholder-btn{
+  width:30px;height:30px;border-radius:6px;border:1px dashed var(--border);
+  background:var(--surface-soft);color:var(--text-soft);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;
+  padding:0;
+}
+.img-placeholder-btn:hover{border-color:var(--primary);color:var(--primary);}
+.img-remove-btn{
+  background:none;border:none;color:var(--text-soft);cursor:pointer;font-size:13px;
+  padding:2px 4px;flex-shrink:0;
+}
+.img-remove-btn:hover{color:#A31432;}
+
+.img-field-box{display:flex;align-items:center;gap:10px;}
+.img-field-preview{
+  width:64px;height:64px;border-radius:10px;object-fit:cover;border:1px solid var(--border);
+  background:var(--surface-soft);flex-shrink:0;
+}
+.img-field-placeholder{
+  width:64px;height:64px;border-radius:10px;border:1px dashed var(--border);
+  background:var(--surface-soft);color:var(--text-soft);font-size:11px;
+  display:flex;align-items:center;justify-content:center;text-align:center;flex-shrink:0;
+}
+.img-field-actions{display:flex;flex-direction:column;gap:6px;}
+.img-upload-label{
+  display:inline-flex;align-items:center;gap:5px;background:var(--primary-light);
+  color:var(--primary-dark);border-radius:8px;padding:6px 12px;font-size:12.5px;
+  font-weight:600;cursor:pointer;white-space:nowrap;
+}
+.img-upload-label:hover{background:#E0C7F0;}
+.img-clear-label{
+  font-size:12px;color:var(--text-soft);cursor:pointer;text-decoration:underline;
+  background:none;border:none;padding:0;text-align:left;
+}
+.img-hint{font-size:11px;color:var(--text-soft);}
+
+/* image lightbox */
+.lightbox-overlay{
+  position:fixed;inset:0;background:rgba(40,20,55,0.75);display:none;
+  align-items:center;justify-content:center;z-index:300;padding:24px;cursor:zoom-out;
+}
+.lightbox-overlay.open{display:flex;}
+.lightbox-overlay img{max-width:90vw;max-height:90vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+::-webkit-scrollbar-thumb{background:var(--primary-light);border-radius:10px;}
+::-webkit-scrollbar-thumb:hover{background:var(--primary);}
+
+@media (max-width:640px){
+  .toolbar-row{flex-direction:column;align-items:stretch;}
+  .field-group{min-width:0;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="page-header">
+    <div class="brand">
+      <div class="brand-mark">俐準</div>
+      <div>
+        <h1>研發課全機種資料庫查詢系統</h1>
+        <p>俐準企業 R&amp;D 產品開發資料庫 · 網頁版</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span class="save-indicator" id="saveIndicator">已自動儲存</span>
+      <button class="btn btn-ghost" id="btnResetFilter">清除篩選</button>
+      <button class="btn btn-primary" id="btnAddNew">＋ 新增機種資料</button>
+    </div>
+  </div>
+
+  <div class="stats-row" id="statsRow"></div>
+
+  <div class="toolbar">
+    <div class="toolbar-row">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="input" id="searchInput" placeholder="輸入關鍵字搜尋…">
+        <button type="button" class="search-clear-btn" id="searchClearBtn" title="清除關鍵字">✕</button>
+      </div>
+
+      <div class="chip-picker" id="searchColPicker">
+        <button class="chip-picker-btn" id="searchColBtn">
+          搜尋欄位 <span class="chip-badge" id="searchColCount">0</span> ▾
+        </button>
+        <div class="chip-panel" id="searchColPanel"></div>
+      </div>
+
+      <div class="field-group" style="max-width:180px;">
+        <label>狀態篩選</label>
+        <select class="input" id="statusFilter">
+          <option value="">全部狀態</option>
+        </select>
+      </div>
+
+      <div class="chip-picker" id="displayColPicker">
+        <button class="chip-picker-btn" id="displayColBtn">
+          顯示欄位 <span class="chip-badge" id="displayColCount">0</span> ▾
+        </button>
+        <div class="chip-panel" id="displayColPanel" style="right:0;left:auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-scroll">
+      <table id="dataTable">
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="result-info" id="resultInfo"></div>
+  </div>
+
+</div>
+
+<!-- Edit / Add Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">新增機種資料</h2>
+      <button class="modal-close" id="modalCloseBtn">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="modalCancelBtn">取消</button>
+      <button class="btn btn-primary" id="modalSaveBtn">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm dialog -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <p id="confirmMsg">確定要刪除這筆資料嗎？此動作無法復原。</p>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" id="confirmCancelBtn">取消</button>
+      <button class="btn btn-danger" id="confirmOkBtn">確定刪除</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="lightbox-overlay" id="lightboxOverlay">
+  <img id="lightboxImg" src="" alt="圖示預覽">
+</div>
+
+<script>
+const PAYLOAD = {"headers": ["客戶", "機種", "BASE", "圖示", "最新圖面版次", "類別", "動力型式", "排氣量", "LCD TYPE", "狀態", "PM", "助理", "機構", "電子", "軟體", "開案日期", "手剎車燈", "機油壓力燈", "SERVICE燈", "ABS燈", "故障燈", "水溫燈", "TCS燈", "胎壓警示燈", "動力方向燈", "剎車油液面燈", "N擋燈", "限速燈", "ESS急煞雙閃", "一燈斷線", "OPC蜂鳴器", "電池狀態燈", "電池故障燈", "馬達故障燈", "倒車燈", "電池溫度異常燈", "節能模式", "提示音開啟提示", "斷電指示燈", "速度", "里程顯示", "電池電量", "左、右轉提示燈", "鉛酸低電壓燈", "OPC燈", "終端電阻", "MCU", "軟體版本", "硬體版本", "電線", "鐵件", "CRC編碼", "輪胎吋數", "轉速比", "量產日期", "預計年銷售量", "備註"], "rows": [{"客戶": "KYMCO", "機種": "17550-BCC3-900", "BASE": "17550-AEE2-900", "圖示": "-", "最新圖面版次": "03", "類別": "幫浦", "動力型式": "速克達", "排氣量": "-", "LCD TYPE": "-", "狀態": "已量產", "PM": "黃傳傑", "助理": "許景棋", "機構": "呂嘉綺", "電子": "-", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "-", "水溫燈": "-", "TCS燈": "-", "胎壓警示燈": "", "動力方向燈": "-", "剎車油液面燈": "-", "N擋燈": "-", "限速燈": "-", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2026-02-09", "預計年銷售量": "", "備註": "差異濾網改為10u(客供)", "__id": 1}, {"客戶": "KYMCO", "機種": "1755A-BBD7-E00", "BASE": "1755A-AEE2-900", "圖示": "-", "最新圖面版次": "02", "類別": "幫浦", "動力型式": "速克達", "排氣量": "-", "LCD TYPE": "-", "狀態": "開發中", "PM": "陳亞靖", "助理": "許景棋", "機構": "陳先輝", "電子": "-", "軟體": "-", "開案日期": "2023-10-13", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "-", "水溫燈": "-", "TCS燈": "-", "胎壓警示燈": "", "動力方向燈": "-", "剎車油液面燈": "-", "N擋燈": "-", "限速燈": "-", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "12000/年", "備註": "", "__id": 2}, {"客戶": "KYMCO", "機種": "1755A-BBE5-700", "BASE": "1755A-BBE5-900", "圖示": "-", "最新圖面版次": "02", "類別": "幫浦", "動力型式": "速克達", "排氣量": "-", "LCD TYPE": "-", "狀態": "已量產", "PM": "簡汝錦", "助理": "廖敏如", "機構": "陳先輝", "電子": "-", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "-", "水溫燈": "-", "TCS燈": "-", "胎壓警示燈": "", "動力方向燈": "-", "剎車油液面燈": "-", "N擋燈": "-", "限速燈": "-", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2026-05-22", "預計年銷售量": "", "備註": "", "__id": 3}, {"客戶": "KYMCO", "機種": "1755A-BCC3-900", "BASE": "1755A-BLA6-900 (00版BASE)\n1755A-AEE2-900 (01版設變後)", "圖示": "-", "最新圖面版次": "04", "類別": "幫浦", "動力型式": "速克達", "排氣量": "-", "LCD TYPE": "-", "狀態": "已量產", "PM": "黃傳傑", "助理": "許景棋", "機構": "呂嘉綺", "電子": "-", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "-", "水溫燈": "-", "TCS燈": "-", "胎壓警示燈": "", "動力方向燈": "-", "剎車油液面燈": "-", "N擋燈": "-", "限速燈": "-", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2026-02-09", "預計年銷售量": "", "備註": "00版：BLA6幫浦+AEE2浮筒\n01版BASE：AEE2，差異濾網改為10u(客供)", "__id": 4}, {"客戶": "KYMCO", "機種": "1755A-BCC5-800", "BASE": "1755A-BLA6-900", "圖示": "-", "最新圖面版次": "02", "類別": "幫浦", "動力型式": "速克達", "排氣量": "-", "LCD TYPE": "-", "狀態": "已量產", "PM": "陳亞靖", "助理": "廖敏如", "機構": "陳先輝", "電子": "-", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "-", "水溫燈": "-", "TCS燈": "-", "胎壓警示燈": "", "動力方向燈": "-", "剎車油液面燈": "-", "N擋燈": "-", "限速燈": "-", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2026-04-01", "預計年銷售量": "", "備註": "差異支持架", "__id": 5}, {"客戶": "KYMCO", "機種": "1755A-BEC8-900", "BASE": "1755A-BCC5-800", "圖示": "-", "最新圖面版次": "00", "類別": "幫浦", "動力型式": "速克達", "排氣量": "-", "LCD TYPE": "-", "狀態": "開發中", "PM": "簡汝錦", "助理": "廖敏如", "機構": "陳先輝", "電子": "-", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "-", "水溫燈": "-", "TCS燈": "-", "胎壓警示燈": "", "動力方向燈": "-", "剎車油液面燈": "-", "N擋燈": "-", "限速燈": "-", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "", "備註": "", "__id": 6}, {"客戶": "KYMCO", "機種": "31340-BEC8-800", "BASE": "31340-AFB5-890", "圖示": "-", "最新圖面版次": "02", "類別": "SENSOR", "動力型式": "速克達", "排氣量": "-", "LCD TYPE": "-", "狀態": "開發中", "PM": "簡汝錦", "助理": "廖敏如", "機構": "陳先輝", "電子": "許乃文", "軟體": "-", "開案日期": "2026-01-22", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "-", "水溫燈": "-", "TCS燈": "-", "胎壓警示燈": "", "動力方向燈": "-", "剎車油液面燈": "-", "N擋燈": "-", "限速燈": "-", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "", "備註": "", "__id": 7}, {"客戶": "KYMCO", "機種": "31340-YWA1-M00", "BASE": "31340-AHH8-M00", "圖示": "-", "最新圖面版次": "02", "類別": "SENSOR", "動力型式": "速克達", "排氣量": "-", "LCD TYPE": "-", "狀態": "已量產", "PM": "陳亞靖", "助理": "陳亞靖", "機構": "郭晉安", "電子": "許乃文", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "-", "水溫燈": "-", "TCS燈": "-", "胎壓警示燈": "", "動力方向燈": "-", "剎車油液面燈": "-", "N擋燈": "-", "限速燈": "-", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-07-24", "預計年銷售量": "", "備註": "差異於插座顏色為黑色", "__id": 8}, {"客戶": "KYMCO", "機種": "36070-BAE3-900", "BASE": "代工 (客戶客供料)", "圖示": "-", "最新圖面版次": "04", "類別": "控制器", "動力型式": "-", "排氣量": "-", "LCD TYPE": "-", "狀態": "已量產", "PM": "蔡佩琪", "助理": "廖敏如", "機構": "-", "電子": "許乃文", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "-", "水溫燈": "-", "TCS燈": "-", "胎壓警示燈": "", "動力方向燈": "-", "剎車油液面燈": "-", "N擋燈": "-", "限速燈": "-", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-06-24", "預計年銷售量": "", "備註": "", "__id": 9}, {"客戶": "KYMCO", "機種": "36070-BCC6-900", "BASE": "36070-BAE3-900", "圖示": "-", "最新圖面版次": "03", "類別": "控制器", "動力型式": "-", "排氣量": "-", "LCD TYPE": "-", "狀態": "已量產", "PM": "蔡佩琪", "助理": "廖敏如", "機構": "-", "電子": "許乃文", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "-", "水溫燈": "-", "TCS燈": "-", "胎壓警示燈": "", "動力方向燈": "-", "剎車油液面燈": "-", "N擋燈": "-", "限速燈": "-", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-06-14", "預計年銷售量": "", "備註": "多一顆IC、電阻位移", "__id": 10}, {"客戶": "KYMCO", "機種": "37200-AED7-950", "BASE": "37200-AED7-900", "圖示": "-", "最新圖面版次": "02", "類別": "電子錶", "動力型式": "電動車", "排氣量": "50cc", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "簡汝錦", "助理": "許景棋", "機構": "林世偉", "電子": "-", "軟體": "楊志榮", "開案日期": "2026-04-28", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "-", "水溫燈": "-", "TCS燈": "-", "胎壓警示燈": "", "動力方向燈": "-", "剎車油液面燈": "-", "N擋燈": "-", "限速燈": "-", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "", "備註": "", "__id": 11}, {"客戶": "KYMCO", "機種": "37200-AKB8-700", "BASE": "37200-AKB8-EA5", "圖示": "-", "最新圖面版次": "04", "類別": "電子錶", "動力型式": "速克達", "排氣量": "575cc", "LCD TYPE": "LCD+LED", "狀態": "已量產", "PM": "蔡佩琪", "助理": "廖敏如", "機構": "呂嘉綺", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "實體", "機油壓力燈": "CAN", "SERVICE燈": "實體", "ABS燈": "CAN", "故障燈": "-", "水溫燈": "CAN", "TCS燈": "實體", "胎壓警示燈": "實體", "動力方向燈": "-", "剎車油液面燈": "-", "N擋燈": "-", "限速燈": "-", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "主板：A1\n小板：A1", "硬體版本": "VER.04\nVER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-02-21", "預計年銷售量": "", "備註": "差異機油保養里程為2000", "__id": 12}, {"客戶": "KYMCO", "機種": "37200-AKB8-BJ0", "BASE": "37200-AKB8-EA5", "圖示": "-", "最新圖面版次": "04", "類別": "電子錶", "動力型式": "速克達", "排氣量": "575cc", "LCD TYPE": "LCD+LED", "狀態": "已量產", "PM": "陳亞靖", "助理": "廖敏如", "機構": "呂嘉綺", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "實體", "機油壓力燈": "CAN", "SERVICE燈": "實體", "ABS燈": "CAN", "故障燈": "-", "水溫燈": "CAN", "TCS燈": "實體", "胎壓警示燈": "實體", "動力方向燈": "-", "剎車油液面燈": "-", "N擋燈": "-", "限速燈": "-", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "主板：A1\n小板：A1", "硬體版本": "VER.04\nVER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-09-11", "預計年銷售量": "", "備註": "差異無CCS功能", "__id": 13}, {"客戶": "KYMCO", "機種": "37200-AKB8-EA5", "BASE": "3720A-AKB8-E200", "圖示": "-", "最新圖面版次": "04", "類別": "電子錶", "動力型式": "速克達", "排氣量": "575cc", "LCD TYPE": "LCD+LED", "狀態": "已量產", "PM": "蔡佩琪", "助理": "廖敏如", "機構": "呂嘉綺", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "實體", "機油壓力燈": "CAN", "SERVICE燈": "實體", "ABS燈": "CAN", "故障燈": "-", "水溫燈": "CAN", "TCS燈": "實體", "胎壓警示燈": "實體", "動力方向燈": "-", "剎車油液面燈": "-", "N擋燈": "-", "限速燈": "-", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "主板：A1\n小板：A1", "硬體版本": "VER.04\nVER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-02-21", "預計年銷售量": "", "備註": "Noodoe改LCD", "__id": 14}, {"客戶": "KYMCO", "機種": "37200-AKB8-M31", "BASE": "37200-AKB8-EA5", "圖示": "-", "最新圖面版次": "03", "類別": "電子錶", "動力型式": "速克達", "排氣量": "575cc", "LCD TYPE": "LCD+LED", "狀態": "已量產", "PM": "陳亞靖", "助理": "廖敏如", "機構": "呂嘉綺", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "實體", "機油壓力燈": "CAN", "SERVICE燈": "實體", "ABS燈": "CAN", "故障燈": "-", "水溫燈": "CAN", "TCS燈": "實體", "胎壓警示燈": "實體", "動力方向燈": "-", "剎車油液面燈": "-", "N擋燈": "-", "限速燈": "-", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "主板：A1\n小板：A1", "硬體版本": "VER.04\nVER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-05-08", "預計年銷售量": "", "備註": "差異速度指度與AKB8-M30同，無CCS功能", "__id": 15}, {"客戶": "KYMCO", "機種": "37200-AKB8-M32", "BASE": "37200-AKB8-M31", "圖示": "-", "最新圖面版次": "02", "類別": "電子錶", "動力型式": "速克達", "排氣量": "575cc", "LCD TYPE": "LCD+LED", "狀態": "開發中", "PM": "陳亞靖", "助理": "廖敏如", "機構": "吳至傑", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "2025-02-06", "手剎車燈": "實體", "機油壓力燈": "CAN", "SERVICE燈": "實體", "ABS燈": "CAN", "故障燈": "-", "水溫燈": "CAN", "TCS燈": "實體", "胎壓警示燈": "實體", "動力方向燈": "-", "剎車油液面燈": "-", "N擋燈": "-", "限速燈": "-", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "主板：A1\n小板：A1", "硬體版本": "VER.04\nVER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "", "備註": "差異速度指度與AKB8-M30同，有CCS功能", "__id": 16}, {"客戶": "KYMCO", "機種": "37200-BAD8-510 ", "BASE": "37200-BAD8-B000-TH", "圖示": "-", "最新圖面版次": "09", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "陳亞靖", "助理": "陳亞靖", "機構": "-", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "CAN", "水溫燈": "-", "TCS燈": "-", "胎壓警示燈": "-", "動力方向燈": "-", "剎車油液面燈": "-", "N擋燈": "-", "限速燈": "-", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "CAN", "電池故障燈": "CAN", "馬達故障燈": "CAN", "倒車燈": "CAN", "電池溫度異常燈": "CAN", "節能模式": "CAN", "提示音開啟提示": "CAN", "斷電指示燈": "CAN", "速度": "CAN", "里程顯示": "CAN", "電池電量": "CAN", "左、右轉提示燈": "實體", "鉛酸低電壓燈": "CAN", "OPC燈": "CAN", "終端電阻": "", "MCU": "NXP", "軟體版本": "0016", "硬體版本": "VER.02", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "10吋胎", "轉速比": "-", "量產日期": "2025-06-21", "預計年銷售量": "", "備註": "新增雲端更新軟體、通訊規範不同，機構件延用", "__id": 17}, {"客戶": "KYMCO", "機種": "37200-BAD8-710", "BASE": "37200-BAD8-900", "圖示": "-", "最新圖面版次": "01", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "停止開發", "PM": "蔡佩琪", "助理": "林孟華", "機構": "郭晉安", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "NXP", "軟體版本": "E1", "硬體版本": "VER.03", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "10吋胎", "轉速比": "-", "量產日期": "停止開發", "預計年銷售量": "", "備註": "差異軟體、電線(圖面取消停止開發)", "__id": 18}, {"客戶": "KYMCO", "機種": "37200-BAD8-820", "BASE": "37200-BAD8-510", "圖示": "-", "最新圖面版次": "04", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "陳亞靖", "助理": "陳亞靖", "機構": "-", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "NXP", "軟體版本": "0016", "硬體版本": "VER.02", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "12吋胎", "轉速比": "-", "量產日期": "2025-06-21", "預計年銷售量": "", "備註": "新增雲端更新軟體、通訊規範、輪徑不同，機構件延用", "__id": 19}, {"客戶": "KYMCO", "機種": "37200-BAD8-BH0", "BASE": "37200-AKD3-900", "圖示": "-", "最新圖面版次": "02", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "停止開發", "PM": "陳亞靖", "助理": "陳亞靖", "機構": "-", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "NXP", "軟體版本": "E1", "硬體版本": "VER.02", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "12吋胎", "轉速比": "-", "量產日期": "停止開發", "預計年銷售量": "", "備註": "新增雲端更新軟體、通訊規範不同，機構件延用\n4/14光陽開發發出圖面取消TC", "__id": 20}, {"客戶": "KYMCO", "機種": "37200-BBB3-800", "BASE": "-", "圖示": "-", "最新圖面版次": "13", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "蔡佩琪", "助理": "陳亞靖", "機構": "王義仁", "電子": "陳鵬旭", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "", "水溫燈": "-", "TCS燈": "-", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "A2", "硬體版本": "VER.05", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2023-09-15", "預計年銷售量": "", "備註": "", "__id": 21}, {"客戶": "KYMCO", "機種": "37200-BBB3-900", "BASE": "-", "圖示": "-", "最新圖面版次": "12", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "蔡佩琪", "助理": "許景棋", "機構": "王義仁", "電子": "陳鵬旭", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "CAN", "故障燈": "", "水溫燈": "-", "TCS燈": "CAN", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "A2", "硬體版本": "VER.05", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2023-09-15", "預計年銷售量": "", "備註": "", "__id": 22}, {"客戶": "KYMCO", "機種": "37200-BBB3-910", "BASE": "37200-BBB3-900", "圖示": "-", "最新圖面版次": "01", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "陳亞靖", "助理": "陳亞靖", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "CAN", "故障燈": "", "水溫燈": "-", "TCS燈": "CAN", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "A2", "硬體版本": "VER.05", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2026-03-03", "預計年銷售量": "", "備註": "", "__id": 23}, {"客戶": "KYMCO", "機種": "37200-BBB3-700", "BASE": "37200-BBB3-900+HAZARD", "圖示": "-", "最新圖面版次": "06", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "陳亞靖", "助理": "陳亞靖", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "CAN", "故障燈": "", "水溫燈": "-", "TCS燈": "CAN", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "A1", "硬體版本": "VER.01", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2024-05-03", "預計年銷售量": "", "備註": "", "__id": 24}, {"客戶": "KYMCO", "機種": "37200-BBC2-E00", "BASE": "-", "圖示": "-", "最新圖面版次": "11", "類別": "電子錶", "動力型式": "沙攤車", "排氣量": "700cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "蔡佩琪", "助理": "廖敏如", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "有", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "A3", "硬體版本": "VER.02", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-08-18", "預計年銷售量": "", "備註": "無ABS", "__id": 25}, {"客戶": "KYMCO", "機種": "37200-BBC2-M00", "BASE": "37200-BBC2-E00 ", "圖示": "-", "最新圖面版次": "-", "類別": "電子錶", "動力型式": "沙攤車", "排氣量": "700cc", "LCD TYPE": "LCD", "狀態": "暫停開發", "PM": "陳亞靖", "助理": "蔡佩琪", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "2025-12-04", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "-", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "-", "硬體版本": "VER.02", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "暫停開發", "預計年銷售量": "200/年", "備註": "", "__id": 26}, {"客戶": "KYMCO", "機種": "37200-BBC5-E00", "BASE": "37200-BBC2-E00(01版)", "圖示": "-", "最新圖面版次": "02", "類別": "電子錶", "動力型式": "沙攤車", "排氣量": "700cc", "LCD TYPE": "LCD", "狀態": "停止開發", "PM": "蔡佩琪", "助理": "廖敏如", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "-", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "F8", "硬體版本": "VER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "停止開發", "預計年銷售量": "", "備註": "無ABS、手剎車燈(圖面取消停止開發)", "__id": 27}, {"客戶": "KYMCO", "機種": "37200-BBE2-E00", "BASE": "37200-BBC2-E00", "圖示": "-", "最新圖面版次": "11", "類別": "電子錶", "動力型式": "沙攤車", "排氣量": "500cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "蔡佩琪", "助理": "廖敏如", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "有", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "A3", "硬體版本": "VER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-08-18", "預計年銷售量": "", "備註": "無ABS", "__id": 28}, {"客戶": "KYMCO", "機種": "37200-BBE2-M00", "BASE": "37200-BBE2-E00", "圖示": "-", "最新圖面版次": "11", "類別": "電子錶", "動力型式": "沙攤車", "排氣量": "500cc", "LCD TYPE": "LCD", "狀態": "暫停開發", "PM": "陳亞靖", "助理": "蔡佩琪", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "-", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "A3", "硬體版本": "VER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-08-18", "預計年銷售量": "200/年", "備註": "取消左右方向燈、OPC功能、避震墊圈，所以上蓋、電路板、軟體新製", "__id": 29}, {"客戶": "KYMCO", "機種": "37200-BBE6-M00", "BASE": "-", "圖示": "-", "最新圖面版次": "-", "類別": "電子錶", "動力型式": "沙攤車", "排氣量": "-", "LCD TYPE": "LCD", "狀態": "停止開發", "PM": "蔡佩琪", "助理": "廖敏如", "機構": "-", "電子": "-", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "-", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "停止開發", "預計年銷售量": "", "備註": "(KY未開發)", "__id": 30}, {"客戶": "KYMCO", "機種": "37200-BBE7-E00", "BASE": "37200-BBE9-E00", "圖示": "-", "最新圖面版次": "11", "類別": "電子錶", "動力型式": "沙攤車", "排氣量": "500cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "蔡佩琪", "助理": "廖敏如", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "有", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "A3", "硬體版本": "VER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-08-18", "預計年銷售量": "", "備註": "", "__id": 31}, {"客戶": "KYMCO", "機種": "37200-BBE8-M00", "BASE": "-", "圖示": "-", "最新圖面版次": "-", "類別": "電子錶", "動力型式": "沙攤車", "排氣量": "-", "LCD TYPE": "LCD", "狀態": "停止開發", "PM": "蔡佩琪", "助理": "廖敏如", "機構": "-", "電子": "-", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "-", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "停止開發", "預計年銷售量": "", "備註": "(KY未開發)", "__id": 32}, {"客戶": "KYMCO", "機種": "37200-BBE9-E00", "BASE": "37200-BBC2-E00(00版)", "圖示": "-", "最新圖面版次": "11", "類別": "電子錶", "動力型式": "沙攤車", "排氣量": "700cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "蔡佩琪", "助理": "廖敏如", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "有", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "A3", "硬體版本": "VER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-08-18", "預計年銷售量": "", "備註": "", "__id": 33}, {"客戶": "KYMCO", "機種": "37200-AGA9-M30", "BASE": "37200-BBC2-E0010版)", "圖示": "-", "最新圖面版次": "00", "類別": "電子錶", "動力型式": "沙攤車", "排氣量": "700cc", "LCD TYPE": "LCD", "狀態": "暫停開發", "PM": "黃傳傑", "助理": "蔡佩琪", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "2026-05-07", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "-", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "E2", "硬體版本": "VER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "200/年", "備註": "", "__id": 34}, {"客戶": "KYMCO", "機種": "37200-AKG9-M30", "BASE": "37200-BBE2-E00", "圖示": "-", "最新圖面版次": "-", "類別": "電子錶", "動力型式": "沙攤車", "排氣量": "500cc", "LCD TYPE": "LCD", "狀態": "暫停開發", "PM": "黃傳傑", "助理": "蔡佩琪", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "2026-05-07", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "-", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "E2", "硬體版本": "VER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "200/年", "備註": "", "__id": 35}, {"客戶": "KYMCO", "機種": "37200-AGA9-E60", "BASE": "37200-BBE9-E00(11版)", "圖示": "-", "最新圖面版次": "00", "類別": "電子錶", "動力型式": "沙攤車", "排氣量": "300cc", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "黃傳傑", "助理": "蔡佩琪", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "有", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "E2", "硬體版本": "VER.02", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "", "備註": "", "__id": 36}, {"客戶": "KYMCO", "機種": "37200-BBE5-700", "BASE": "37200-BBE5-900", "圖示": "-", "最新圖面版次": "02", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "簡汝錦", "助理": "許景棋", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "", "水溫燈": "-", "TCS燈": "-", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "0002", "硬體版本": "VER.01", "電線": "有", "鐵件": "無", "CRC編碼": "FF0E", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2026-05-22", "預計年銷售量": "", "備註": "", "__id": 37}, {"客戶": "KYMCO", "機種": "37200-BBE5-800", "BASE": "37200-BLA6-900", "圖示": "-", "最新圖面版次": "04", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "停止開發", "PM": "陳亞靖", "助理": "許景棋", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "CAN", "故障燈": "", "水溫燈": "-", "TCS燈": "CAN", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "E2", "硬體版本": "VER.01", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "停止開發", "預計年銷售量": "", "備註": "", "__id": 38}, {"客戶": "KYMCO", "機種": "37200-BBE5-900", "BASE": "37200-BLA6-900", "圖示": "-", "最新圖面版次": "08", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "蔡佩琪", "助理": "許景棋", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "", "水溫燈": "-", "TCS燈": "-", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "A2", "硬體版本": "VER.01", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2024-04-22", "預計年銷售量": "", "備註": "", "__id": 39}, {"客戶": "KYMCO", "機種": "37200-BCB7-800", "BASE": "37200-BCB7-900", "圖示": "-", "最新圖面版次": "02", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "停止開發", "PM": "蔡佩琪", "助理": "許景棋", "機構": "王義仁", "電子": "王璿軍", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "", "水溫燈": "-", "TCS燈": "-", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "E2", "硬體版本": "VER.01", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "停止開發", "預計年銷售量": "", "備註": "", "__id": 40}, {"客戶": "KYMCO", "機種": "37200-BCB7-900", "BASE": "37200-BBB3-900", "圖示": "-", "最新圖面版次": "06", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "陳亞靖", "助理": "許景棋", "機構": "王義仁", "電子": "王璿軍", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "實體", "故障燈": "", "水溫燈": "-", "TCS燈": "-", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "A2", "硬體版本": "VER.02", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "", "備註": "", "__id": 41}, {"客戶": "KYMCO", "機種": "37200-BCC3-T00", "BASE": "-", "圖示": "-", "最新圖面版次": "-", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "停止開發", "PM": "蔡佩琪", "助理": "-", "機構": "陳先輝", "電子": "-", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "停止開發", "預計年銷售量": "", "備註": "僅以手工品送樣1PCS(不量產)", "__id": 42}, {"客戶": "KYMCO", "機種": "37200-BCC5-800", "BASE": "37200-BCC5-900", "圖示": "-", "最新圖面版次": "04", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "陳亞靖", "助理": "許景棋", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "CAN", "故障燈": "", "水溫燈": "CAN", "TCS燈": "CAN(Y)", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "CAN", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "0007", "硬體版本": "VER.01", "電線": "有", "鐵件": "無", "CRC編碼": "51CE", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2026-04-01", "預計年銷售量": "", "備註": "差異電線、軟體、液晶", "__id": 43}, {"客戶": "KYMCO", "機種": "37200-BCC5-900", "BASE": "37200-BLA6-900", "圖示": "-", "最新圖面版次": "07", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "蔡佩琪", "助理": "許景棋", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "CAN", "故障燈": "", "水溫燈": "CAN", "TCS燈": "CAN(G+Y)", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "CAN", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "0006", "硬體版本": "VER.01", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2024-12-04", "預計年銷售量": "", "備註": "", "__id": 44}, {"客戶": "KYMCO", "機種": "37200-BCC5-S00", "BASE": "37200-BCC5-900", "圖示": "-", "最新圖面版次": "03", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "陳亞靖", "助理": "許景棋", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "CAN", "故障燈": "", "水溫燈": "CAN", "TCS燈": "CAN(Y)", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "0001", "硬體版本": "VER.01", "電線": "有", "鐵件": "無", "CRC編碼": "06F5", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2026-04-07", "預計年銷售量": "", "備註": "差異電線、軟體、液晶", "__id": 45}, {"客戶": "KYMCO", "機種": "37200-BCE9-900", "BASE": "37200-AEE2-800", "圖示": "-", "最新圖面版次": "-", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "簡汝錦", "助理": "廖敏如", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "2023-10-26", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "NXP", "軟體版本": "-", "硬體版本": "-", "電線": "有", "鐵件": "有", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "", "備註": "ABS+TCS版", "__id": 46}, {"客戶": "KYMCO", "機種": "37200-BDD3-900", "BASE": "37200-BAD6-900", "圖示": "-", "最新圖面版次": "05", "類別": "傳統錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "已量產", "PM": "簡汝錦", "助理": "許景棋", "機構": "呂嘉綺", "電子": "-", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-04-14", "預計年銷售量": "", "備註": "差異為裝飾板和文字板", "__id": 47}, {"客戶": "KYMCO", "機種": "37200-BDE2-800", "BASE": "37200-BBF1-600", "圖示": "-", "最新圖面版次": "08", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "簡汝錦", "助理": "許景棋", "機構": "郭晉安", "電子": "李品毅", "軟體": "黃皇銘", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "0006", "硬體版本": "VER.01", "電線": "有", "鐵件": "無", "CRC編碼": "EF24", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-11-18", "預計年銷售量": "", "備註": "BDE2-S00儀表+BDE2-900電線", "__id": 48}, {"客戶": "KYMCO", "機種": "37200-BDE2-810", "BASE": "37200-BDE2-800", "圖示": "-", "最新圖面版次": "01", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "簡汝錦", "助理": "許景棋", "機構": "陳靖文", "電子": "李品毅", "軟體": "王雯卿", "開案日期": "2026-03-31", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "0006", "硬體版本": "VER.01", "電線": "有", "鐵件": "無", "CRC編碼": "EF24", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "13200/年", "備註": "BDE2-S00儀表+BDE2-900電線+中端電阻", "__id": 49}, {"客戶": "KYMCO", "機種": "37200-BDE2-900", "BASE": "37200-AFB5-700", "圖示": "-", "最新圖面版次": "07", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "簡汝錦", "助理": "許景棋", "機構": "郭晉安", "電子": "李品毅", "軟體": "黃皇銘", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "0007", "硬體版本": "VER.01", "電線": "有", "鐵件": "無", "CRC編碼": "5Ab3", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-11-18", "預計年銷售量": "", "備註": "無ABS，差異為電路板、液晶和裝飾板\nLCD背光側投改正投", "__id": 50}, {"客戶": "KYMCO", "機種": "37200-BDE2-S00", "BASE": "37200-BDE2-800", "圖示": "-", "最新圖面版次": "09", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "簡汝錦", "助理": "許景棋", "機構": "陳靖文", "電子": "李品毅", "軟體": "王雯卿", "開案日期": "2025-03-20", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "0006", "硬體版本": "VER.01", "電線": "有", "鐵件": "無", "CRC編碼": "EF24", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "13200/年", "備註": "有ABS，差異為電路板、液晶和裝飾板\nLCD背光側投改正投", "__id": 51}, {"客戶": "KYMCO", "機種": "37200-BEC8-800", "BASE": "-", "圖示": "-", "最新圖面版次": "02", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "簡汝錦", "助理": "廖敏如", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "2025-12-12", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "0001", "硬體版本": "VER.02", "電線": "有", "鐵件": "無", "CRC編碼": "81bA", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "41000/年", "備註": "一般版", "__id": 52}, {"客戶": "KYMCO", "機種": "37200-BEC8-900", "BASE": "-", "圖示": "-", "最新圖面版次": "02", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "簡汝錦", "助理": "廖敏如", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "2025-12-12", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "0001", "硬體版本": "VER.02", "電線": "有", "鐵件": "無", "CRC編碼": "0681", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "41000/年", "備註": "鼓煞版", "__id": 53}, {"客戶": "KYMCO", "機種": "37200-BLA3-700", "BASE": "-", "圖示": "-", "最新圖面版次": "15", "類別": "電子錶", "動力型式": "速克達", "排氣量": "700cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "蔡佩琪", "助理": "陳亞靖", "機構": "王義仁", "電子": "王璿軍", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "實體", "故障燈": "", "水溫燈": "-", "TCS燈": "實體", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "-", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "A1", "硬體版本": "VER.05", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2022-05-11", "預計年銷售量": "", "備註": "無", "__id": 54}, {"客戶": "KYMCO", "機種": "37200-BLA3-900", "BASE": "-", "圖示": "-", "最新圖面版次": "15", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "蔡佩琪", "助理": "陳亞靖", "機構": "王義仁", "電子": "王璿軍", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "實體", "故障燈": "", "水溫燈": "-", "TCS燈": "實體", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "A2", "硬體版本": "VER.05", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2022-05-11", "預計年銷售量": "", "備註": "無", "__id": 55}, {"客戶": "KYMCO", "機種": "37200-BLA6-600", "BASE": "37200-BLA6-900", "圖示": "-", "最新圖面版次": "02", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "簡汝錦", "助理": "許景棋", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "CAN", "故障燈": "", "水溫燈": "CAN", "TCS燈": "CAN", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "0002", "硬體版本": "VER.01", "電線": "有", "鐵件": "無", "CRC編碼": "7858", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2026-05-22", "預計年銷售量": "", "備註": "無", "__id": 56}, {"客戶": "KYMCO", "機種": "37200-BLA6-800", "BASE": "37200-BLA6-900", "圖示": "-", "最新圖面版次": "12", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "蔡佩琪", "助理": "陳亞靖", "機構": "王義仁", "電子": "王璿軍", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "-", "故障燈": "", "水溫燈": "CAN", "TCS燈": "-", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "有", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "A3", "硬體版本": "VER.01", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2024-05-26", "預計年銷售量": "", "備註": "無", "__id": 57}, {"客戶": "KYMCO", "機種": "37200-BLA6-900", "BASE": "37200-BBB3-9000", "圖示": "-", "最新圖面版次": "12", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "蔡佩琪", "助理": "陳亞靖", "機構": "王義仁", "電子": "王璿軍", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "CAN", "故障燈": "", "水溫燈": "CAN", "TCS燈": "CAN", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "-", "OPC蜂鳴器": "-", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "-", "MCU": "Renesas", "軟體版本": "A3", "硬體版本": "VER.01", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2024-05-26", "預計年銷售量": "", "備註": "無", "__id": 58}, {"客戶": "KYMCO", "機種": "37200-YWA1-E00", "BASE": "37200-YYA3-E01", "圖示": "-", "最新圖面版次": "01", "類別": "電子錶", "動力型式": "沙攤車", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "蔡佩琪", "助理": "蔡佩琪", "機構": "呂嘉綺", "電子": "李品毅", "軟體": "黃皇銘", "開案日期": "2025-07-12", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "E4", "硬體版本": "VER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "600/年", "備註": "燈片多一個限速指示燈符號", "__id": 59}, {"客戶": "KYMCO", "機種": "37200-YYA3-E01", "BASE": "37200-YYA3-M02", "圖示": "-", "最新圖面版次": "05", "類別": "電子錶", "動力型式": "沙攤車", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "蔡佩琪", "助理": "蔡佩琪", "機構": "呂嘉綺", "電子": "李品毅", "軟體": "黃皇銘", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "A1", "硬體版本": "VER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2026-02-24", "預計年銷售量": "600/年", "備註": "有左右方向燈、OPC、速度\\ODO\\TRIP為13%", "__id": 60}, {"客戶": "KYMCO", "機種": "37200-YYA3-M02", "BASE": "-", "圖示": "-", "最新圖面版次": "08", "類別": "電子錶", "動力型式": "沙攤車", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "蔡佩琪", "助理": "蔡佩琪", "機構": "呂嘉綺", "電子": "李品毅", "軟體": "黃皇銘", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "A1", "硬體版本": "VER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2026-02-24", "預計年銷售量": "600/年", "備註": "無左右方向燈、無OPC、速度\\ODO\\TRIP為13%", "__id": 61}, {"客戶": "KYMCO", "機種": "3720A-AFB9-M08", "BASE": "3720A-AFB9-M07", "圖示": "-", "最新圖面版次": "02", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "黃傳傑", "助理": "廖敏如", "機構": "王義仁", "電子": "李品毅", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Microchip", "軟體版本": "A1", "硬體版本": "VER.05", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-11-20", "預計年銷售量": "", "備註": "新增方向燈，差異上蓋、電路板", "__id": 62}, {"客戶": "KYMCO", "機種": "37401-BLD3-M01", "BASE": "37401-BLD3-M00", "圖示": "-", "最新圖面版次": "00", "類別": "指示燈座", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "開發中", "PM": "簡汝錦", "助理": "廖敏如", "機構": "張富程", "電子": "-", "軟體": "-", "開案日期": "2025-09-30", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "-", "硬體版本": "VER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "", "備註": "取消遠光燈，故差異在燈片和電線", "__id": 63}, {"客戶": "KYMCO", "機種": "37800-BDA5-900", "BASE": "37800-BLA6-900", "圖示": "-", "最新圖面版次": "-", "類別": "浮筒", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "停止開發", "PM": "簡汝錦", "助理": "廖敏如", "機構": "-", "電子": "-", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "停止開發", "預計年銷售量": "", "備註": "差異為支持架(改沿用BLA6浮筒，故取消開發)", "__id": 64}, {"客戶": "KYMCO", "機種": "3780A-BFB3-M30", "BASE": "3780A-ADE1-E30", "圖示": "-", "最新圖面版次": "00", "類別": "浮筒", "動力型式": "速克達", "排氣量": "700cc", "LCD TYPE": "-", "狀態": "開發中", "PM": "黃傳傑", "助理": "許景棋", "機構": "陳靖文", "電子": "-", "軟體": "-", "開案日期": "2026-06-30", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "500/年", "備註": "裝配橡皮材質改為VITON FK-7008-Z1，其它一樣", "__id": 65}, {"客戶": "KYMCO", "機種": "3870A-BAC9-900", "BASE": "3870A-BCC7-900 (無外殼)", "圖示": "-", "最新圖面版次": "03", "類別": "控制器", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "停止開發", "PM": "蔡佩琪", "助理": "蔡佩琪", "機構": "陳先輝", "電子": "許乃文", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "停止開發", "預計年銷售量": "", "備註": "交光聯經電腳踏車，差異SKU ID韌體、FW版本，含插座防水墊圈，不裝上、下蓋其它組件(圖面取消停止開發)\n儀錶：37200-BAC9-900 (銷光聯輕電腳踏車)", "__id": 66}, {"客戶": "KYMCO", "機種": "3870A-BAD8-510", "BASE": "3870A-BBE3-900 (有天線)", "圖示": "-", "最新圖面版次": "08", "類別": "控制器", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "已量產", "PM": "蔡佩琪", "助理": "蔡佩琪", "機構": "陳先輝", "電子": "許乃文", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": 43, "硬體版本": "VER.04", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-02-20", "預計年銷售量": "", "備註": "差異SKU ID韌體、FW版本\n儀錶：37200-BAD8-510\\BAD8-820 (銷台灣)", "__id": 67}, {"客戶": "KYMCO", "機種": "3870A-BAD8-BH0 ", "BASE": "3870A-BBE3-900 (有天線)", "圖示": "-", "最新圖面版次": "00", "類別": "控制器", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "停止開發", "PM": "蔡佩琪", "助理": "蔡佩琪", "機構": "陳先輝", "電子": "許乃文", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "無資料", "預計年銷售量": "", "備註": "差異SKU ID韌體、FW版本(圖面取消停止開發)\n儀錶：37200-BAD8-BH0 (銷泰國)", "__id": 68}, {"客戶": "KYMCO", "機種": "3870A-BCA1-900", "BASE": "3870A-BBE3-900 (有天線)", "圖示": "-", "最新圖面版次": "07", "類別": "控制器", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "已量產", "PM": "蔡佩琪", "助理": "蔡佩琪", "機構": "陳先輝", "電子": "許乃文", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "E9", "硬體版本": "VER.04", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-02-18", "預計年銷售量": "", "備註": "差異SKU ID韌體、FW版本\n儀錶：37200-BCA1-900 (銷台灣)", "__id": 69}, {"客戶": "KYMCO", "機種": "3870A-BCC7-900", "BASE": "無天線", "圖示": "-", "最新圖面版次": "03", "類別": "控制器", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "停止開發", "PM": "蔡佩琪", "助理": "蔡佩琪", "機構": "陳先輝", "電子": "許乃文", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "停止開發", "預計年銷售量": "", "備註": "差異電路板、下蓋(圖面取消停止開發)", "__id": 70}, {"客戶": "KYMCO", "機種": "3870A-BCD7-BH0", "BASE": "3870A-BCC7-900 (無天線)", "圖示": "-", "最新圖面版次": "05", "類別": "控制器", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "停止開發", "PM": "蔡佩琪", "助理": "蔡佩琪", "機構": "陳先輝", "電子": "許乃文", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "停止開發", "預計年銷售量": "", "備註": "差異電路板、下蓋、SKU ID韌體、FW版本(圖面取消停止開發)\n儀錶：37200-BCD7-BH0 (銷泰國)", "__id": 71}, {"客戶": "KYMCO", "機種": "3870B-BAD8-520", "BASE": "3870A-BAD8-BH0 (有天線)", "圖示": "-", "最新圖面版次": "00", "類別": "控制器", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "停止開發", "PM": "蔡佩琪", "助理": "蔡佩琪", "機構": "陳先輝", "電子": "許乃文", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "停止開發", "預計年銷售量": "", "備註": "差異SKU ID韌體、FW版本(圖面取消停止開發)", "__id": 72}, {"客戶": "KYMCO", "機種": "3870C-BAD8-520", "BASE": "3870A-BAD8-BH0 (有天線)", "圖示": "-", "最新圖面版次": "04", "類別": "控制器", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "已量產", "PM": "蔡佩琪", "助理": "蔡佩琪", "機構": "陳先輝", "電子": "許乃文", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": 60, "硬體版本": "VER.05", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-11-06", "預計年銷售量": "", "備註": "差異SKU ID韌體、FW版本\n儀錶：37200-BAD8-510 (銷台灣)", "__id": 73}, {"客戶": "KYMCO", "機種": "44800-ALC5-MD0", "BASE": "44800-LKC7-760", "圖示": "-", "最新圖面版次": "04", "類別": "SENSOR", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "已量產", "PM": "黃傳傑", "助理": "陳亞靖", "機構": "陳先輝", "電子": "李品毅", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2026-04-08", "預計年銷售量": "", "備註": "差異電線", "__id": 74}, {"客戶": "AEON", "機種": "31121204-000--00", "BASE": "全新", "圖示": "-", "最新圖面版次": "01", "類別": "控制器", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "開發中", "PM": "蔡佩琪", "助理": "蔡佩琪", "機構": "陳先輝", "電子": "許乃文", "軟體": "-", "開案日期": "2023-01-30", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "VER.03", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "12000/年", "備註": "OEM機種", "__id": 75}, {"客戶": "AEON", "機種": "37200288-000--00", "BASE": "37200E08-000--02", "圖示": "-", "最新圖面版次": "00", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "蔡佩琪", "助理": "黃傳傑", "機構": "陳先輝", "電子": "王璿軍", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "NXP", "軟體版本": "A1", "硬體版本": "VER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2023-12-01", "預計年銷售量": "", "備註": "LED模組改為LCD模組，差異軟體", "__id": 76}, {"客戶": "AEON", "機種": "37200292-000--00", "BASE": "37200288-000--00", "圖示": "-", "最新圖面版次": "01", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "蔡佩琪", "助理": "黃傳傑", "機構": "陳先輝", "電子": "王璿軍", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "NXP", "軟體版本": "A2", "硬體版本": "VER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2023-12-01", "預計年銷售量": "", "備註": "硬體共用37200288-000--00，差異於軟體", "__id": 77}, {"客戶": "AEON", "機種": "37200294-000--00", "BASE": "37200288-000--00", "圖示": "-", "最新圖面版次": "00", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "黃傳傑", "助理": "廖敏如", "機構": "陳先輝", "電子": "王璿軍", "軟體": "楊志榮", "開案日期": "2022-11-17", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "NXP", "軟體版本": "TBD", "硬體版本": "VER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "", "備註": "BOM共用37200288-000--00，差異於軟體", "__id": 78}, {"客戶": "GOGORO", "機種": "32104-MRN-0000-R01", "BASE": "全新", "圖示": "-", "最新圖面版次": "-", "類別": "SENSOR", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "停止開發", "PM": "簡汝錦", "助理": "-", "機構": "郭晉安", "電子": "王璿軍", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "停止開發", "預計年銷售量": "", "備註": "", "__id": 79}, {"客戶": "GOGORO", "機種": "3570A-1LB-10", "BASE": "全新", "圖示": "-", "最新圖面版次": "R02", "類別": "GO KEY", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "開發中", "PM": "簡汝錦", "助理": "許景棋", "機構": "吳至傑", "電子": "王璿軍", "軟體": "-", "開案日期": "2026-01-12", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "22000/年", "備註": "", "__id": 80}, {"客戶": "GOGORO", "機種": "37200-1LB-00", "BASE": "全新", "圖示": "-", "最新圖面版次": "01", "類別": "電子錶", "動力型式": "電動車", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "黃傳傑", "助理": "許景棋", "機構": "郭晉安", "電子": "許乃文", "軟體": "陳姿嫚", "開案日期": "", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": 400006, "硬體版本": "VER.02", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2026-07-07", "預計年銷售量": "22000/年", "備註": "Luna,白牌車 (約7kw再少一點點)", "__id": 81}, {"客戶": "GOGORO", "機種": "37200-1RB-00", "BASE": "全新", "圖示": "-", "最新圖面版次": "R02", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "黃傳傑", "助理": "許景棋", "機構": "張富程", "電子": "許乃文", "軟體": "陳姿嫚", "開案日期": "2025-11-18", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "A00004", "硬體版本": "VER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "20000/年", "備註": "白牌車，中高階車", "__id": 82}, {"客戶": "GOGORO", "機種": "37200-UE2-0001", "BASE": "全新", "圖示": "-", "最新圖面版次": "01", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "簡汝錦", "助理": "許景棋", "機構": "郭晉安", "電子": "王璿軍", "軟體": "陳姿嫚", "開案日期": "", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "NXP", "軟體版本": 10003, "硬體版本": "VER.03", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2024-10-16", "預計年銷售量": "", "備註": "", "__id": 83}, {"客戶": "GOGORO", "機種": "77250-1LB-00", "BASE": "全新", "圖示": "-", "最新圖面版次": "R01", "類別": "USB", "動力型式": "速克達", "排氣量": "250cc", "LCD TYPE": "-", "狀態": "開發中", "PM": "簡汝錦", "助理": "廖敏如", "機構": "王義仁", "電子": "許乃文", "軟體": "-", "開案日期": "2025-06-20", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "VER.02", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "22000/年", "備註": "Luna,QC3.0+PD，殼件沿用UG2", "__id": 84}, {"客戶": "GOGORO", "機種": "GA725-FB0-00", "BASE": "全新-FB1配件", "圖示": "-", "最新圖面版次": "-", "類別": "-", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "暫停開發", "PM": "簡汝錦", "助理": "許景棋", "機構": "郭晉安", "電子": "許乃文", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "暫停開發", "預計年銷售量": "", "備註": "鐵件、外殼重新開模", "__id": 85}, {"客戶": "SYM", "機種": "37200-D75-0000", "BASE": "37200-D71-0000", "圖示": "-", "最新圖面版次": "==", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "簡汝錦", "助理": "許景棋", "機構": "張富程", "電子": "王璿軍", "軟體": "陳姿嫚", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "S00", "硬體版本": "VER.02", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-09-26", "預計年銷售量": "", "備註": "外觀共用D71，差異於軟體", "__id": 86}, {"客戶": "SYM", "機種": "37200-D7A-0000", "BASE": "37200-D71-0000", "圖示": "-", "最新圖面版次": "00", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "簡汝錦", "助理": "許景棋", "機構": "陳先輝", "電子": "王璿軍", "軟體": "陳姿嫚", "開案日期": "2026-02-24", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "S00", "硬體版本": "VER.02", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "", "備註": "差異LCD、軟體", "__id": 87}, {"客戶": "SYM", "機種": "37200-FBR-0000", "BASE": "AVH的延伸，油錶改用FBA", "圖示": "-", "最新圖面版次": "00", "類別": "傳統錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "暫停開發", "PM": "簡汝錦", "助理": "-", "機構": "張富程", "電子": "-", "軟體": "-", "開案日期": "2023-08-07", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "暫停開發", "預計年銷售量": "", "備註": "文字板、電線新開", "__id": 88}, {"客戶": "SYM", "機種": "37200-FBS-0000", "BASE": "AVH的延伸，油錶改用FBA", "圖示": "-", "最新圖面版次": "00", "類別": "傳統錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "暫停開發", "PM": "簡汝錦", "助理": "-", "機構": "張富程", "電子": "-", "軟體": "-", "開案日期": "2023-08-07", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "暫停開發", "預計年銷售量": "", "備註": "文字板、電線新開", "__id": 89}, {"客戶": "SYM", "機種": "37200-TT1-0000", "BASE": "全新", "圖示": "-", "最新圖面版次": "=", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "TFT 彩色", "狀態": "已量產", "PM": "黃傳傑", "助理": "許景棋", "機構": "張富程", "電子": "王璿軍", "軟體": "陳姿嫚", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "NXP", "軟體版本": "S00", "硬體版本": "VER.03", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-02-26", "預計年銷售量": "", "備註": "無加熱把手功能", "__id": 90}, {"客戶": "SYM", "機種": "37200-TT2-0000", "BASE": "37200-TT1-0000", "圖示": "-", "最新圖面版次": "=", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "TFT 彩色", "狀態": "已量產", "PM": "黃傳傑", "助理": "許景棋", "機構": "張富程", "電子": "王璿軍", "軟體": "陳姿嫚", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "NXP", "軟體版本": "S00", "硬體版本": "VER.03", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-03-17", "預計年銷售量": "", "備註": "無胎壓功能", "__id": 91}, {"客戶": "SYM", "機種": "37200-TT3-0000", "BASE": "37200-TT1-0000", "圖示": "-", "最新圖面版次": "=", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "TFT 彩色", "狀態": "已量產", "PM": "黃傳傑", "助理": "許景棋", "機構": "張富程", "電子": "王璿軍", "軟體": "陳姿嫚", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "NXP", "軟體版本": "S00", "硬體版本": "VER.03", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-03-17", "預計年銷售量": "", "備註": "全功能(包含TT1、TT2的功能)", "__id": 92}, {"客戶": "SYM", "機種": "3720A-EC3-0000", "BASE": "全新", "圖示": "-", "最新圖面版次": "07", "類別": "電子錶", "動力型式": "電動車", "排氣量": "4kw", "LCD TYPE": "LCD", "狀態": "已量產", "PM": "蔡佩琪", "助理": "黃傳傑", "機構": "郭晉安", "電子": "王璿軍", "軟體": "陳姿嫚", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "NXP", "軟體版本": "S01", "硬體版本": "VER.04", "電線": "有", "鐵件": "有", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-03-26", "預計年銷售量": "", "備註": "電車(4kw)，沿用FV1上下蓋,上蓋lens改為燻黑,LED模組", "__id": 93}, {"客戶": "SYM", "機種": "3720A-EC4-0000", "BASE": "3720A-EC3-0000", "圖示": "-", "最新圖面版次": "00", "類別": "電子錶", "動力型式": "電動車", "排氣量": "4kw", "LCD TYPE": "LCD", "狀態": "停止開發", "PM": "黃傳傑", "助理": "廖敏如", "機構": "郭晉安", "電子": "王璿軍", "軟體": "陳姿嫚", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "NXP", "軟體版本": "S01", "硬體版本": "VER.04", "電線": "有", "鐵件": "有", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "停止開發", "預計年銷售量": "", "備註": "電車(4kw)，差異軟體取消TCS功能(停止開發)", "__id": 94}, {"客戶": "SYM", "機種": "3720A-EC5-0000", "BASE": "3720A-EC3-0000", "圖示": "-", "最新圖面版次": "-", "類別": "電子錶", "動力型式": "電動車", "排氣量": "-", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "黃傳傑", "助理": "廖敏如", "機構": "陳先輝", "電子": "王璿軍", "軟體": "陳姿嫚", "開案日期": "2026-03-19", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "", "軟體版本": "", "硬體版本": "", "電線": "有", "鐵件": "有", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "", "備註": "換電改充電，差異電線、軟體、PCBA(PCB沿用)", "__id": 95}, {"客戶": "SYM", "機種": "3720A-EN1-0000", "BASE": "3720A-F9A-0000", "圖示": "-", "最新圖面版次": "-", "類別": "電子錶", "動力型式": "電動車", "排氣量": "8kw", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "黃傳傑", "助理": "許景棋", "機構": "王義仁", "電子": "王璿軍", "軟體": "陳姿嫚", "開案日期": "2023-07-03", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "NXP", "軟體版本": "EA", "硬體版本": "VER.02", "電線": "有", "鐵件": "有", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "600/年", "備註": "油車改電車(8kw)，插座16p(F9A)改20p(EN1)", "__id": 96}, {"客戶": "SYM", "機種": "3720A-F9D-0000", "BASE": "全新", "圖示": "-", "最新圖面版次": "01", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "黃傳傑", "助理": "廖敏如", "機構": "張富程", "電子": "王璿軍", "軟體": "陳姿嫚", "開案日期": "2025-04-14", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "S01", "硬體版本": "VER.02", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2026-10-30", "預計年銷售量": "11000/年", "備註": "有ABS、TCS功能", "__id": 97}, {"客戶": "SYM", "機種": "3720A-F9E-0000", "BASE": "3720A-F9D-0000", "圖示": "-", "最新圖面版次": "01", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "黃傳傑", "助理": "廖敏如", "機構": "張富程", "電子": "王璿軍", "軟體": "陳姿嫚", "開案日期": "2025-04-14", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "S01", "硬體版本": "VER.02", "電線": "有", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2026-10-30", "預計年銷售量": "", "備註": "沒ABS、TCS功能，差異上蓋、電線、電路板、軟體", "__id": 98}, {"客戶": "SYM", "機種": "3720A-FVE-0000", "BASE": "3720A-FV2-0000", "圖示": "-", "最新圖面版次": "00", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "黃傳傑", "助理": "廖敏如", "機構": "陳先輝", "電子": "王璿軍", "軟體": "陳姿嫚", "開案日期": "2026-05-22", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "S01", "硬體版本": "VER.04", "電線": "有", "鐵件": "有", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "", "備註": "沒ABS，差異鐵件(客供)、文字板、電線、PCBA(PCB沿用)\n增加怠速熄火，速度一樣是實體線", "__id": 99}, {"客戶": "SYM", "機種": "3720A-FVF-0000", "BASE": "3720A-FV1-0000", "圖示": "-", "最新圖面版次": "=", "類別": "電子錶", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "LCD", "狀態": "開發中", "PM": "黃傳傑", "助理": "廖敏如", "機構": "陳先輝", "電子": "王璿軍", "軟體": "陳姿嫚", "開案日期": "2026-05-22", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "S01", "硬體版本": "VER.04", "電線": "有", "鐵件": "有", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "", "備註": "有ABS，差異文字板、電線(與FVE共用)、PCBA(PCB沿用)，鐵件沿用FV1\n增加怠速熄火，ABS速度由實體線改走CAN", "__id": 100}, {"客戶": "SYM", "機種": "37250-TT1-0000", "BASE": "全新", "圖示": "-", "最新圖面版次": "==", "類別": "USB", "動力型式": "速克達", "排氣量": "250cc", "LCD TYPE": "-", "狀態": "已量產", "PM": "黃傳傑", "助理": "廖敏如", "機構": "郭晉安", "電子": "王璿軍", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-02-08", "預計年銷售量": "", "備註": "僅應用於CarPlay軟體更新", "__id": 101}, {"客戶": "SYM", "機種": "37800-FTA-0000", "BASE": "37280-D71-0000", "圖示": "-", "最新圖面版次": "01", "類別": "浮筒", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "已量產", "PM": "簡汝錦", "助理": "許景棋", "機構": "-", "電子": "-", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2025-03-03", "預計年銷售量": "", "備註": "差異為支持架", "__id": 102}, {"客戶": "SYM", "機種": "37800-TT1-0000", "BASE": "全新", "圖示": "-", "最新圖面版次": "00", "類別": "浮筒", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "已量產", "PM": "簡汝錦", "助理": "廖敏如", "機構": "呂嘉綺", "電子": "-", "軟體": "-", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2024-11-13", "預計年銷售量": "", "備註": "陶瓷電路板、支持架新開", "__id": 103}, {"客戶": "SYM", "機種": "38100-EC3-0000 (AVAS)", "BASE": "全新", "圖示": "-", "最新圖面版次": "01", "類別": "喇叭", "動力型式": "電動車", "排氣量": "-", "LCD TYPE": "-", "狀態": "已量產", "PM": "蔡佩琪", "助理": "黃傳傑", "機構": "張富程", "電子": "王璿軍", "軟體": "陳姿嫚", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "A1", "硬體版本": "VER.02", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2024-02-06", "預計年銷售量": "", "備註": "", "__id": 104}, {"客戶": "SYM", "機種": "38100-EC5-0000 (AVAS)", "BASE": "38100-EC3-0000 (AVAS)", "圖示": "-", "最新圖面版次": "-", "類別": "喇叭", "動力型式": "電動車", "排氣量": "-", "LCD TYPE": "-", "狀態": "開發中", "PM": "黃傳傑", "助理": "廖敏如", "機構": "陳先輝", "電子": "王璿軍", "軟體": "陳姿嫚", "開案日期": "2026-03-19", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "-", "硬體版本": "VER.02", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "", "備註": "只改軟體-CAN", "__id": 105}, {"客戶": "汎森", "機種": "0881509UA", "BASE": "全新", "圖示": "-", "最新圖面版次": "00", "類別": "傳統錶", "動力型式": "建築機械", "排氣量": "-", "LCD TYPE": "-", "狀態": "停止開發", "PM": "簡汝錦", "助理": "陳亞靖", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "-", "硬體版本": "VER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "無資料", "預計年銷售量": "", "備註": "聯城將於2025/06歇業，故客戶轉找我司承製", "__id": 106}, {"客戶": "汎森", "機種": "0881515UA", "BASE": "全新", "圖示": "-", "最新圖面版次": "01", "類別": "傳統錶", "動力型式": "建築機械", "排氣量": "-", "LCD TYPE": "-", "狀態": "停止開發", "PM": "簡汝錦", "助理": "陳亞靖", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "-", "硬體版本": "VER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "無資料", "預計年銷售量": "", "備註": "聯城將於2025/06歇業，故客戶轉找我司承製", "__id": 107}, {"客戶": "汎森", "機種": "0881517UA", "BASE": "全新", "圖示": "-", "最新圖面版次": "01", "類別": "傳統錶", "動力型式": "建築機械", "排氣量": "-", "LCD TYPE": "-", "狀態": "開發中", "PM": "簡汝錦", "助理": "許景棋", "機構": "王義仁", "電子": "李品毅", "軟體": "楊志榮", "開案日期": "2024-11-15", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "-", "硬體版本": "VER.01", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "", "備註": "", "__id": 108}, {"客戶": "汎森", "機種": "15532-03600", "BASE": "全新", "圖示": "-", "最新圖面版次": "00", "類別": "浮筒", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "開發中", "PM": "簡汝錦", "助理": "許景棋", "機構": "陳先輝", "電子": "-", "軟體": "-", "開案日期": "2024-10-28", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "800/月(9600/年)", "備註": "聯城將於2025/06歇業，故客戶轉找我司承製", "__id": 109}, {"客戶": "汎森", "機種": "15532-03700", "BASE": "全新", "圖示": "-", "最新圖面版次": "00", "類別": "浮筒", "動力型式": "速克達", "排氣量": "700cc", "LCD TYPE": "-", "狀態": "開發中", "PM": "簡汝錦", "助理": "許景棋", "機構": "陳先輝", "電子": "-", "軟體": "-", "開案日期": "2024-10-28", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "50/月(600/年)", "備註": "聯城將於2025/06歇業，故客戶轉找我司承製", "__id": 110}, {"客戶": "汎森", "機種": "15532-03800", "BASE": "全新", "圖示": "-", "最新圖面版次": "00", "類別": "浮筒", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "開發中", "PM": "簡汝錦", "助理": "許景棋", "機構": "陳先輝", "電子": "-", "軟體": "-", "開案日期": "2024-10-28", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "120/月(1440/年)", "備註": "聯城將於2025/06歇業，故客戶轉找我司承製", "__id": 111}, {"客戶": "汎森", "機種": "15532-03900", "BASE": "全新", "圖示": "-", "最新圖面版次": "00", "類別": "浮筒", "動力型式": "速克達", "排氣量": "125cc", "LCD TYPE": "-", "狀態": "開發中", "PM": "簡汝錦", "助理": "許景棋", "機構": "陳先輝", "電子": "-", "軟體": "-", "開案日期": "2024-10-28", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "-", "軟體版本": "-", "硬體版本": "-", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "尚未量產", "預計年銷售量": "280/月(3360/年)", "備註": "聯城將於2025/06歇業，故客戶轉找我司承製", "__id": 112}, {"客戶": "蓋亞", "機種": "RP3-EE05001 (AVAS)", "BASE": "全新", "圖示": "-", "最新圖面版次": "AA", "類別": "喇叭", "動力型式": "電動車", "排氣量": "-", "LCD TYPE": "-", "狀態": "已量產", "PM": "鄭芳萍", "助理": "黃傳傑", "機構": "張富程", "電子": "王璿軍", "軟體": "陳姿嫚", "開案日期": "-", "手剎車燈": "", "機油壓力燈": "", "SERVICE燈": "", "ABS燈": "", "故障燈": "", "水溫燈": "", "TCS燈": "", "胎壓警示燈": "", "動力方向燈": "", "剎車油液面燈": "", "N擋燈": "", "限速燈": "", "ESS急煞雙閃": "", "一燈斷線": "", "OPC蜂鳴器": "", "電池狀態燈": "", "電池故障燈": "", "馬達故障燈": "", "倒車燈": "", "電池溫度異常燈": "", "節能模式": "", "提示音開啟提示": "", "斷電指示燈": "", "速度": "", "里程顯示": "", "電池電量": "", "左、右轉提示燈": "", "鉛酸低電壓燈": "", "OPC燈": "", "終端電阻": "", "MCU": "Renesas", "軟體版本": "-", "硬體版本": "VER.02", "電線": "無", "鐵件": "無", "CRC編碼": "-", "輪胎吋數": "-", "轉速比": "-", "量產日期": "2023-02-23", "預計年銷售量": "", "備註": "", "__id": 113}], "groups": [{"title": "基本資訊", "cols": ["客戶", "機種", "BASE", "圖示", "最新圖面版次", "類別", "動力型式", "排氣量", "LCD TYPE", "狀態"]}, {"title": "負責人員", "cols": ["PM", "助理", "機構", "電子", "軟體"]}, {"title": "時程與銷售", "cols": ["開案日期", "量產日期", "預計年銷售量"]}, {"title": "燈號與功能選項", "cols": ["手剎車燈", "機油壓力燈", "SERVICE燈", "ABS燈", "故障燈", "水溫燈", "TCS燈", "胎壓警示燈", "動力方向燈", "剎車油液面燈", "N擋燈", "限速燈", "ESS急煞雙閃", "一燈斷線", "OPC蜂鳴器", "電池狀態燈", "電池故障燈", "馬達故障燈", "倒車燈", "電池溫度異常燈", "節能模式", "提示音開啟提示", "斷電指示燈", "速度", "里程顯示", "電池電量", "左、右轉提示燈", "鉛酸低電壓燈", "OPC燈"]}, {"title": "技術規格", "cols": ["終端電阻", "MCU", "軟體版本", "硬體版本", "電線", "鐵件", "CRC編碼", "輪胎吋數", "轉速比"]}, {"title": "備註", "cols": ["備註"]}], "defaultVisible": ["客戶", "機種", "BASE", "圖示", "最新圖面版次", "類別", "動力型式", "排氣量", "LCD TYPE", "狀態", "PM", "助理", "機構", "電子", "軟體", "開案日期", "量產日期", "預計年銷售量", "備註"], "statusOptions": ["評估中", "開發中", "已開發", "已量產", "暫停開發", "停止開發", "-"]};
+</script>
+<script>
+(function(){
+  "use strict";
+
+  const STORAGE_KEY = "lihjoen_rd_full_database_v1";
+
+  const HEADERS = PAYLOAD.headers;
+  const GROUPS = PAYLOAD.groups;
+  const DEFAULT_VISIBLE = PAYLOAD.defaultVisible;
+  const STATUS_OPTIONS = PAYLOAD.statusOptions;
+  const DATE_FIELDS = new Set(["開案日期", "量產日期"]);
+  const STATUS_FIELD = "狀態";
+
+  // ---------- status color mapping ----------
+  function statusClass(status){
+    switch(status){
+      case "已量產": return "yiliangchan";
+      case "開發中": return "kaifa";
+      case "停止開發": return "tingzhi";
+      case "暫停開發": return "zanting";
+      case "評估中": return "pinggu";
+      case "已開發": return "yikaifa";
+      default: return "none";
+    }
+  }
+
+  // ---------- state ----------
+  let state = {
+    rows: [],
+    nextId: 1,
+    searchText: "",
+    searchCols: new Set(DEFAULT_VISIBLE),
+    displayCols: new Set(DEFAULT_VISIBLE),
+    statusFilter: "",
+    editingId: null, // null = add mode
+  };
+
+  // ---------- persistence ----------
+  function loadInitial(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        const parsed = JSON.parse(raw);
+        if(parsed && Array.isArray(parsed.rows)){
+          state.rows = parsed.rows;
+          state.nextId = parsed.nextId || (Math.max(0, ...parsed.rows.map(r=>r.__id||0)) + 1);
+          return;
+        }
+      }
+    }catch(e){ console.warn("讀取本地儲存失敗，改用初始資料", e); }
+    // fallback to embedded payload
+    state.rows = JSON.parse(JSON.stringify(PAYLOAD.rows));
+    state.nextId = state.rows.length + 1;
+    persist();
+  }
+
+  function persist(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({rows: state.rows, nextId: state.nextId}));
+    updateSaveIndicator();
+  }
+
+  function updateSaveIndicator(){
+    const el = document.getElementById("saveIndicator");
+    if(!el) return;
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2,"0");
+    const mm = String(now.getMinutes()).padStart(2,"0");
+    const ss = String(now.getSeconds()).padStart(2,"0");
+    el.textContent = `已自動儲存 · ${hh}:${mm}:${ss}`;
+    el.classList.add("flash");
+    clearTimeout(el._flashTimer);
+    el._flashTimer = setTimeout(()=> el.classList.remove("flash"), 900);
+  }
+
+  // ---------- toast ----------
+  let toastTimer = null;
+  function showToast(msg){
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=> t.classList.remove("show"), 2200);
+  }
+
+  // ---------- stats ----------
+  function computeStats(){
+    const counts = {};
+    STATUS_OPTIONS.forEach(s => counts[s] = 0);
+    let other = 0;
+    state.rows.forEach(r=>{
+      const s = r[STATUS_FIELD] || "-";
+      if(counts.hasOwnProperty(s)) counts[s]++;
+      else { counts[s] = (counts[s]||0) + 1; }
+    });
+    return counts;
+  }
+
+  function renderStats(){
+    const counts = computeStats();
+    const el = document.getElementById("statsRow");
+    el.innerHTML = "";
+
+    const total = state.rows.length;
+    const totalCard = document.createElement("div");
+    totalCard.className = "stat-card total";
+    totalCard.innerHTML = `<span class="stat-label">總數</span><span class="stat-value">${total}</span>`;
+    el.appendChild(totalCard);
+
+    Object.keys(counts).forEach(statusKey=>{
+      const cnt = counts[statusKey];
+      if(cnt === 0 && !STATUS_OPTIONS.includes(statusKey)) return;
+      const cls = statusClass(statusKey);
+      const card = document.createElement("div");
+      card.className = "stat-card";
+      card.style.setProperty("--dot-color", `var(--c-${cls}-dot)`);
+      card.innerHTML = `
+        <span class="stat-label"><span class="stat-dot" style="background:var(--c-${cls}-dot)"></span>${statusKey || "未設定"}</span>
+        <span class="stat-value">${cnt}</span>`;
+      el.appendChild(card);
+    });
+  }
+
+  // ---------- status filter dropdown ----------
+  function renderStatusFilterOptions(){
+    const sel = document.getElementById("statusFilter");
+    sel.innerHTML = `<option value="">全部狀態</option>`;
+    STATUS_OPTIONS.forEach(s=>{
+      const o = document.createElement("option");
+      o.value = s; o.textContent = s;
+      sel.appendChild(o);
+    });
+    sel.value = state.statusFilter;
+  }
+
+  // ---------- column chip pickers ----------
+  function buildChipPanel(panelEl, selectedSet, countEl, onChange){
+    panelEl.innerHTML = "";
+
+    const actions = document.createElement("div");
+    actions.className = "chip-panel-actions";
+    const btnAll = document.createElement("button");
+    btnAll.textContent = "全選";
+    btnAll.onclick = ()=>{ HEADERS.forEach(h=>selectedSet.add(h)); refreshPanel(); onChange(); };
+    const btnNone = document.createElement("button");
+    btnNone.textContent = "清除";
+    btnNone.onclick = ()=>{ selectedSet.clear(); refreshPanel(); onChange(); };
+    actions.appendChild(btnAll); actions.appendChild(btnNone);
+    panelEl.appendChild(actions);
+
+    const grid = document.createElement("div");
+    grid.className = "chip-panel-grid";
+    HEADERS.forEach(h=>{
+      const label = document.createElement("label");
+      label.className = "chip-check";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = selectedSet.has(h);
+      cb.addEventListener("change", ()=>{
+        if(cb.checked) selectedSet.add(h); else selectedSet.delete(h);
+        countEl.textContent = selectedSet.size;
+        onChange();
+      });
+      label.appendChild(cb);
+      const span = document.createElement("span");
+      span.textContent = h;
+      label.appendChild(span);
+      grid.appendChild(label);
+    });
+    panelEl.appendChild(grid);
+
+    function refreshPanel(){
+      grid.querySelectorAll("input[type=checkbox]").forEach((cb,i)=>{
+        cb.checked = selectedSet.has(HEADERS[i]);
+      });
+      countEl.textContent = selectedSet.size;
+    }
+    countEl.textContent = selectedSet.size;
+  }
+
+  function setupPicker(btnId, panelId, panel){
+    const btn = document.getElementById(btnId);
+    btn.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      document.querySelectorAll(".chip-panel").forEach(p=>{ if(p!==panel) p.classList.remove("open"); });
+      panel.classList.toggle("open");
+    });
+  }
+
+  document.addEventListener("click", (e)=>{
+    if(!e.target.closest(".chip-picker")){
+      document.querySelectorAll(".chip-panel").forEach(p=>p.classList.remove("open"));
+    }
+  });
+
+  // ---------- image handling (圖示 field) ----------
+  const IMAGE_FIELD = "圖示";
+  function isImageDataUrl(v){
+    return typeof v === "string" && v.startsWith("data:image");
+  }
+  function isJpgFile(file){
+    return file.type === "image/jpeg" || /\.(jpe?g)$/i.test(file.name || "");
+  }
+  // Resizes/compresses the uploaded JPG before storing it, so the
+  // (localStorage-backed) database doesn't balloon in size with many photos.
+  function resizeImageFile(file, maxDim, quality){
+    maxDim = maxDim || 260;
+    quality = quality || 0.75;
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = (e)=>{
+        const img = new Image();
+        img.onload = ()=>{
+          let w = img.width, h = img.height;
+          if(w > h){ if(w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; } }
+          else { if(h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; } }
+          const canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = ()=> reject(new Error("圖片載入失敗"));
+        img.src = e.target.result;
+      };
+      reader.onerror = ()=> reject(new Error("檔案讀取失敗"));
+      reader.readAsDataURL(file);
+    });
+  }
+  function openLightbox(src){
+    const overlay = document.getElementById("lightboxOverlay");
+    document.getElementById("lightboxImg").src = src;
+    overlay.classList.add("open");
+  }
+
+  // ---------- text measuring for content-fit column widths ----------
+  // Use a hidden DOM probe (not canvas) so measurements exactly match the
+  // font actually rendered on the page, avoiding any under-measurement
+  // that would clip text.
+  const _probe = document.createElement("span");
+  _probe.style.position = "absolute";
+  _probe.style.left = "-99999px";
+  _probe.style.top = "0";
+  _probe.style.whiteSpace = "nowrap";
+  _probe.style.visibility = "hidden";
+  _probe.style.fontFamily = getComputedStyle(document.body).fontFamily;
+  document.body.appendChild(_probe);
+
+  function measureText(text, fontSizePx, fontWeight){
+    _probe.style.fontSize = fontSizePx + "px";
+    _probe.style.fontWeight = fontWeight;
+    _probe.textContent = (text === null || text === undefined) ? "" : String(text);
+    return Math.ceil(_probe.getBoundingClientRect().width);
+  }
+
+  // padding budgets (must match the CSS exactly, plus a tiny rounding buffer)
+  const INPUT_PAD_H = 4 + 4;      // .cell-input { padding: 2px 4px }
+  const SELECT_PAD_H = 8 + 20;    // select.cell-input { padding: 3px 20px 3px 8px }
+  const SAFETY = 3;               // sub-pixel rounding only — widths are measured precisely
+
+  function fitInputWidth(input, text){
+    input.style.width = (measureText(text, 13, 400) + SAFETY) + "px";
+  }
+  function fitSelectWidth(select, text){
+    select.style.width = (measureText(text, 11.5, 700) + SELECT_PAD_H - INPUT_PAD_H + SAFETY) + "px";
+  }
+
+  // ---------- table rendering ----------
+  function getVisibleHeaders(){
+    return HEADERS.filter(h => state.displayCols.has(h));
+  }
+
+  function matchesSearch(row){
+    if(!state.searchText) return true;
+    const q = state.searchText.trim().toLowerCase();
+    if(!q) return true;
+    const cols = state.searchCols.size ? Array.from(state.searchCols) : HEADERS;
+    return cols.some(col => String(row[col] ?? "").toLowerCase().includes(q));
+  }
+
+  function matchesStatus(row){
+    if(!state.statusFilter) return true;
+    return (row[STATUS_FIELD] || "") === state.statusFilter;
+  }
+
+  function getFilteredRows(){
+    return state.rows.filter(r => matchesSearch(r) && matchesStatus(r));
+  }
+
+  function renderTable(){
+    const visible = getVisibleHeaders();
+    const thead = document.getElementById("tableHead");
+    const tbody = document.getElementById("tableBody");
+    const resultInfo = document.getElementById("resultInfo");
+
+    const filtered = getFilteredRows();
+
+    // header row: delete column first, then data columns
+    const headTr = document.createElement("tr");
+    const thDel = document.createElement("th");
+    thDel.textContent = "刪除";
+    thDel.style.textAlign = "center";
+    headTr.appendChild(thDel);
+    visible.forEach(h=>{
+      const th = document.createElement("th");
+      th.textContent = h;
+      headTr.appendChild(th);
+    });
+    thead.innerHTML = "";
+    thead.appendChild(headTr);
+
+    tbody.innerHTML = "";
+
+    if(filtered.length === 0){
+      const tr = document.createElement("tr");
+      tr.className = "empty-row";
+      const td = document.createElement("td");
+      td.colSpan = visible.length + 1;
+      td.textContent = "沒有符合條件的資料";
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+    } else {
+      filtered.forEach(row=>{
+        const tr = document.createElement("tr");
+
+        // delete button — placed before all data columns
+        const tdDel = document.createElement("td");
+        tdDel.className = "del-cell";
+        const delBtn = document.createElement("button");
+        delBtn.className = "del-btn";
+        delBtn.title = "刪除此列";
+        delBtn.textContent = "🗑";
+        delBtn.onclick = ()=> confirmDelete(row.__id);
+        tdDel.appendChild(delBtn);
+        tr.appendChild(tdDel);
+
+        // editable data cells — click directly on a cell to edit it.
+        // Each input/select is sized to fit its own text exactly; the
+        // browser's native table layout then makes the whole column as
+        // wide as its widest cell, so the column always fits its content.
+        visible.forEach(h=>{
+          const td = document.createElement("td");
+          if(h === IMAGE_FIELD){
+            const wrap = document.createElement("div");
+            wrap.className = "img-cell";
+
+            const fileInput = document.createElement("input");
+            fileInput.type = "file";
+            fileInput.accept = ".jpg,.jpeg,image/jpeg";
+            fileInput.style.display = "none";
+
+            const renderThumb = ()=>{
+              wrap.innerHTML = "";
+              if(isImageDataUrl(row[h])){
+                const img = document.createElement("img");
+                img.className = "img-thumb";
+                img.src = row[h];
+                img.title = "點擊放大檢視，或點右側 ✕ 移除後重新上傳";
+                img.onclick = ()=> openLightbox(row[h]);
+                wrap.appendChild(img);
+                const removeBtn = document.createElement("button");
+                removeBtn.className = "img-remove-btn";
+                removeBtn.textContent = "✕";
+                removeBtn.title = "移除圖片";
+                removeBtn.onclick = ()=>{
+                  row[h] = "-";
+                  persist();
+                  renderThumb();
+                };
+                wrap.appendChild(removeBtn);
+              } else {
+                const btn = document.createElement("button");
+                btn.className = "img-placeholder-btn";
+                btn.textContent = "📷";
+                btn.title = "點擊上傳 JPG 圖示";
+                btn.onclick = ()=> fileInput.click();
+                wrap.appendChild(btn);
+              }
+              wrap.appendChild(fileInput);
+            };
+
+            fileInput.addEventListener("change", async ()=>{
+              const file = fileInput.files[0];
+              if(!file) return;
+              if(!isJpgFile(file)){
+                alert("⚠ 圖示只接受 JPG 格式的圖片檔案（.jpg / .jpeg）");
+                fileInput.value = "";
+                return;
+              }
+              try{
+                row[h] = await resizeImageFile(file);
+                persist();
+                renderThumb();
+              }catch(err){
+                alert("⚠ 圖片讀取失敗，請重新選擇檔案");
+              }
+              fileInput.value = "";
+            });
+
+            renderThumb();
+            td.appendChild(wrap);
+          } else if(h === STATUS_FIELD){
+            const cls = statusClass(row[h]);
+            const select = document.createElement("select");
+            select.className = "cell-input";
+            select.style.background = `var(--c-${cls}-bg)`;
+            select.style.color = `var(--c-${cls}-fg)`;
+            let opts = STATUS_OPTIONS.slice();
+            if(row[h] && !opts.includes(row[h])) opts.push(row[h]);
+            opts.forEach(s=>{
+              const o = document.createElement("option");
+              o.value = s; o.textContent = s;
+              if(s === (row[h] || "")) o.selected = true;
+              select.appendChild(o);
+            });
+            fitSelectWidth(select, row[h] || "-");
+            select.addEventListener("change", ()=>{
+              row[h] = select.value;
+              const newCls = statusClass(row[h]);
+              select.style.background = `var(--c-${newCls}-bg)`;
+              select.style.color = `var(--c-${newCls}-fg)`;
+              fitSelectWidth(select, select.value);
+              persist();
+              renderStats();
+            });
+            td.appendChild(select);
+          } else {
+            const input = document.createElement("input");
+            input.type = "text";
+            input.className = "cell-input";
+            input.title = String(row[h] ?? "");
+            input.value = row[h] ?? "";
+            fitInputWidth(input, input.value);
+            input.addEventListener("input", ()=> fitInputWidth(input, input.value));
+            input.addEventListener("blur", ()=>{
+              const newVal = input.value.trim();
+              if(newVal === (row[h] ?? "")){
+                fitInputWidth(input, input.value);
+                return;
+              }
+              const err = validateField(h, newVal);
+              if(err){
+                alert("⚠ 資料格式錯誤：\n\n" + err);
+                input.value = row[h] ?? ""; // revert to the last valid value
+                fitInputWidth(input, input.value);
+                return;
+              }
+              row[h] = newVal;
+              persist();
+              fitInputWidth(input, input.value);
+            });
+            input.addEventListener("keydown", (e)=>{
+              if(e.key === "Enter"){ e.preventDefault(); input.blur(); }
+            });
+            td.appendChild(input);
+          }
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    resultInfo.textContent = `顯示 ${filtered.length} / ${state.rows.length} 筆資料 · 點選任一欄位即可直接修改`;
+  }
+
+  function renderAll(){
+    renderStats();
+    renderTable();
+  }
+
+  const SELECT_FIELDS = new Set(["客戶", "類別", "動力型式", "排氣量", "LCD TYPE", "PM", "助理", "機構", "電子", "軟體"]);
+
+  function getDistinctValues(field){
+    const set = new Set();
+    state.rows.forEach(r=>{
+      const v = (r[field] ?? "").toString().trim();
+      if(v) set.add(v);
+    });
+    return Array.from(set).sort((a,b)=> a.localeCompare(b, "zh-Hant"));
+  }
+
+  // ---------- validation ----------
+  const NUMERIC_FIELDS = new Set(["預計年銷售量"]);
+  // Matches the company's part-number style model codes, e.g.
+  // "17550-BCC3-900", "3720A-EC3-0000", "38100-EC5-0000 (AVAS)", "0881509UA".
+  // Alphanumeric groups optionally separated by (single/double) hyphens,
+  // with an optional trailing parenthetical note, min length 8.
+  const MODEL_CODE_PATTERN = /^[0-9A-Za-z]+(-{1,2}[0-9A-Za-z]+){0,3}(\s*\([0-9A-Za-z]+\))?$/;
+
+  // Returns an error message string if the value is invalid for this field,
+  // or null if it's fine. Empty string and "-" are always treated as
+  // "not applicable" and considered valid, matching how the original data
+  // uses "-" for unknown/blank entries.
+  function validateField(h, val){
+    const trimmed = (val ?? "").toString().trim();
+    if(trimmed === "" || trimmed === "-") return null;
+
+    if(h === "機種" || h === "BASE"){
+      if(trimmed.length < 8 || !MODEL_CODE_PATTERN.test(trimmed)){
+        return `「${h}」格式不符合機種編碼方式（例如 17550-BCC3-900），請確認後重新輸入，或填「-」`;
+      }
+      return null;
+    }
+    if(DATE_FIELDS.has(h)){
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)){
+        return `「${h}」格式錯誤：請輸入 YYYY-MM-DD（例如 2026-01-15）或填「-」`;
+      }
+      return null;
+    }
+    if(NUMERIC_FIELDS.has(h)){
+      if(!/^\d+(\.\d+)?$/.test(trimmed)){
+        return `「${h}」請輸入數字或填「-」`;
+      }
+      return null;
+    }
+    return null;
+  }
+
+  // ---------- modal (add / edit) ----------
+  function fieldInputHTML(h, value){
+    const val = (value ?? "").toString().replace(/"/g,"&quot;");
+    if(h === STATUS_FIELD){
+      let opts = STATUS_OPTIONS.map(s=>`<option value="${s}" ${s===value?"selected":""}>${s}</option>`).join("");
+      if(value && !STATUS_OPTIONS.includes(value)){
+        opts += `<option value="${val}" selected>${val}</option>`;
+      }
+      return `<select data-field="${h}">${opts}</select>`;
+    }
+    if(SELECT_FIELDS.has(h)){
+      const choices = getDistinctValues(h);
+      let opts = `<option value="" ${!value?"selected":""}>請選擇…</option>`;
+      choices.forEach(c=>{
+        opts += `<option value="${c.replace(/"/g,"&quot;")}" ${c===value?"selected":""}>${c}</option>`;
+      });
+      if(value && !choices.includes(value)){
+        opts += `<option value="${val}" selected>${val}</option>`;
+      }
+      return `<select data-field="${h}">${opts}</select>`;
+    }
+    if(DATE_FIELDS.has(h)){
+      const dateVal = /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : "";
+      return `<input type="text" data-field="${h}" value="${val}" placeholder="YYYY-MM-DD 或文字">`;
+    }
+    return `<input type="text" data-field="${h}" value="${val}">`;
+  }
+
+  // Builds the 圖示 (image) field for the add/edit modal: a preview box,
+  // an "上傳圖片" button (JPG only), a clear link, and a hidden input
+  // carrying the actual value so the generic [data-field] collector in
+  // saveModal() picks it up like every other field.
+  function buildImageField(value){
+    const box = document.createElement("div");
+    box.className = "img-field-box";
+
+    const hidden = document.createElement("input");
+    hidden.type = "hidden";
+    hidden.setAttribute("data-field", IMAGE_FIELD);
+    hidden.value = value || "-"; // "-" = no image yet, consistent with the rest of the dataset
+
+    const previewSlot = document.createElement("div");
+
+    const renderPreview = ()=>{
+      previewSlot.innerHTML = "";
+      if(isImageDataUrl(hidden.value)){
+        const img = document.createElement("img");
+        img.className = "img-field-preview";
+        img.src = hidden.value;
+        img.style.cursor = "zoom-in";
+        img.onclick = ()=> openLightbox(hidden.value);
+        previewSlot.appendChild(img);
+      } else {
+        const ph = document.createElement("div");
+        ph.className = "img-field-placeholder";
+        ph.textContent = "尚無圖片";
+        previewSlot.appendChild(ph);
+      }
+    };
+    renderPreview();
+
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".jpg,.jpeg,image/jpeg";
+    fileInput.style.display = "none";
+    fileInput.addEventListener("change", async ()=>{
+      const file = fileInput.files[0];
+      if(!file) return;
+      if(!isJpgFile(file)){
+        alert("⚠ 圖示只接受 JPG 格式的圖片檔案（.jpg / .jpeg）");
+        fileInput.value = "";
+        return;
+      }
+      try{
+        hidden.value = await resizeImageFile(file);
+        renderPreview();
+      }catch(err){
+        alert("⚠ 圖片讀取失敗，請重新選擇檔案");
+      }
+      fileInput.value = "";
+    });
+
+    const actions = document.createElement("div");
+    actions.className = "img-field-actions";
+    const uploadLabel = document.createElement("label");
+    uploadLabel.className = "img-upload-label";
+    uploadLabel.textContent = "📷 上傳 JPG 圖片";
+    uploadLabel.onclick = ()=> fileInput.click();
+    const clearBtn = document.createElement("button");
+    clearBtn.type = "button";
+    clearBtn.className = "img-clear-label";
+    clearBtn.textContent = "清除圖片";
+    clearBtn.onclick = ()=>{ hidden.value = "-"; renderPreview(); };
+    const hint = document.createElement("div");
+    hint.className = "img-hint";
+    hint.textContent = "僅接受 JPG 檔";
+    actions.appendChild(uploadLabel);
+    actions.appendChild(clearBtn);
+    actions.appendChild(hint);
+
+    box.appendChild(previewSlot);
+    box.appendChild(actions);
+    box.appendChild(fileInput);
+    box.appendChild(hidden);
+    return box;
+  }
+
+  function buildModalBody(row){
+    const body = document.getElementById("modalBody");
+    body.innerHTML = "";
+    GROUPS.forEach(group=>{
+      const section = document.createElement("div");
+      section.className = "form-section";
+      const h3 = document.createElement("h3");
+      h3.textContent = group.title;
+      section.appendChild(h3);
+      const grid = document.createElement("div");
+      grid.className = "form-grid";
+      group.cols.forEach(h=>{
+        const field = document.createElement("div");
+        field.className = "form-field";
+        const label = document.createElement("label");
+        label.textContent = h;
+        field.innerHTML = "";
+        field.appendChild(label);
+        if(h === IMAGE_FIELD){
+          field.appendChild(buildImageField(row ? row[h] : ""));
+        } else {
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = fieldInputHTML(h, row ? row[h] : "");
+          field.appendChild(wrapper.firstElementChild);
+        }
+        grid.appendChild(field);
+      });
+      section.appendChild(grid);
+      body.appendChild(section);
+    });
+  }
+
+  function openModal(id){
+    state.editingId = id || null;
+    const row = id ? state.rows.find(r=>r.__id === id) : null;
+    document.getElementById("modalTitle").textContent = row ? `編輯機種資料 — ${row["機種"] || ""}` : "新增機種資料";
+    buildModalBody(row);
+    document.getElementById("modalOverlay").classList.add("open");
+  }
+
+  function closeModal(){
+    document.getElementById("modalOverlay").classList.remove("open");
+    state.editingId = null;
+  }
+
+  function saveModal(){
+    const inputs = document.querySelectorAll("#modalBody [data-field]");
+    const data = {};
+    inputs.forEach(inp=>{ data[inp.getAttribute("data-field")] = inp.value.trim(); });
+
+    const errors = [];
+    const REQUIRED_GROUP_TITLES = new Set(["基本資訊", "負責人員"]);
+    GROUPS.forEach(group=>{
+      if(!REQUIRED_GROUP_TITLES.has(group.title)) return;
+      group.cols.forEach(col=>{
+        if(!(data[col] || "").trim()){
+          errors.push(`請填寫「${col}」`);
+        }
+      });
+    });
+    HEADERS.forEach(h=>{
+      const err = validateField(h, data[h]);
+      if(err) errors.push(err);
+    });
+
+    if(errors.length){
+      alert("⚠ 資料有誤，請修正以下項目後再儲存：\n\n" + errors.map(e=>"• "+e).join("\n"));
+      return;
+    }
+
+    if(state.editingId){
+      const row = state.rows.find(r=>r.__id === state.editingId);
+      Object.assign(row, data);
+      showToast("已更新機種資料");
+    } else {
+      const newRow = { __id: state.nextId++, ...Object.fromEntries(HEADERS.map(h=>[h,""])), ...data };
+      state.rows.unshift(newRow); // new entries always appear at the top of the database
+      showToast("已新增機種資料");
+    }
+    persist();
+    closeModal();
+    renderAll();
+  }
+
+  // ---------- delete ----------
+  let pendingDeleteId = null;
+  function confirmDelete(id){
+    pendingDeleteId = id;
+    document.getElementById("confirmOverlay").classList.add("open");
+  }
+  function doDelete(){
+    if(pendingDeleteId){
+      state.rows = state.rows.filter(r=>r.__id !== pendingDeleteId);
+      persist();
+      renderAll();
+      showToast("已刪除該筆資料");
+    }
+    pendingDeleteId = null;
+    document.getElementById("confirmOverlay").classList.remove("open");
+  }
+
+  // ---------- wiring ----------
+  function init(){
+    loadInitial();
+    updateSaveIndicator();
+    renderStatusFilterOptions();
+
+    const searchPanel = document.getElementById("searchColPanel");
+    const searchCount = document.getElementById("searchColCount");
+    buildChipPanel(searchPanel, state.searchCols, searchCount, renderTable);
+    setupPicker("searchColBtn", "searchColPanel", searchPanel);
+
+    const displayPanel = document.getElementById("displayColPanel");
+    const displayCount = document.getElementById("displayColCount");
+    buildChipPanel(displayPanel, state.displayCols, displayCount, renderTable);
+    setupPicker("displayColBtn", "displayColPanel", displayPanel);
+
+    document.getElementById("searchInput").addEventListener("input", (e)=>{
+      state.searchText = e.target.value;
+      document.getElementById("searchClearBtn").classList.toggle("show", !!e.target.value);
+      renderTable();
+    });
+
+    document.getElementById("searchClearBtn").addEventListener("click", ()=>{
+      state.searchText = "";
+      const input = document.getElementById("searchInput");
+      input.value = "";
+      document.getElementById("searchClearBtn").classList.remove("show");
+      input.focus();
+      renderTable();
+    });
+
+    document.getElementById("statusFilter").addEventListener("change", (e)=>{
+      state.statusFilter = e.target.value;
+      renderTable();
+    });
+
+    document.getElementById("btnResetFilter").addEventListener("click", ()=>{
+      state.searchText = "";
+      state.statusFilter = "";
+      document.getElementById("searchInput").value = "";
+      document.getElementById("statusFilter").value = "";
+      document.getElementById("searchClearBtn").classList.remove("show");
+      renderTable();
+      showToast("已清除篩選條件");
+    });
+
+    document.getElementById("btnAddNew").addEventListener("click", ()=> openModal(null));
+    document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
+    document.getElementById("modalCancelBtn").addEventListener("click", closeModal);
+    document.getElementById("modalSaveBtn").addEventListener("click", saveModal);
+    document.getElementById("modalOverlay").addEventListener("click", (e)=>{
+      if(e.target.id === "modalOverlay") closeModal();
+    });
+
+    document.getElementById("confirmCancelBtn").addEventListener("click", ()=>{
+      pendingDeleteId = null;
+      document.getElementById("confirmOverlay").classList.remove("open");
+    });
+    document.getElementById("confirmOkBtn").addEventListener("click", doDelete);
+
+    document.getElementById("lightboxOverlay").addEventListener("click", ()=>{
+      document.getElementById("lightboxOverlay").classList.remove("open");
+    });
+    document.addEventListener("keydown", (e)=>{
+      if(e.key === "Escape") document.getElementById("lightboxOverlay").classList.remove("open");
+    });
+
+    // safeguard: commit any focused, unsaved cell edit before the page unloads
+    window.addEventListener("beforeunload", ()=>{
+      const active = document.activeElement;
+      if(active && active.classList && active.classList.contains("cell-input")){
+        active.blur();
+      }
+    });
+
+    renderAll();
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
+
+</script>
+</body>
+</html>
